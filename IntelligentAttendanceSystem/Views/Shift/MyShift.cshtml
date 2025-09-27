@@ -1,0 +1,119 @@
+﻿@model UserShift
+@{
+    ViewData["Title"] = "My Shift";
+}
+
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">My Current Shift</h3>
+            </div>
+            <div class="card-body">
+                @if (Model != null)
+                {
+                    <div class="text-center">
+                        <div class="mb-4">
+                            <i class="fas fa-clock fa-4x text-primary mb-3"></i>
+                            <h3>@Model.Shift?.ShiftName</h3>
+                            <p class="text-muted">@Model.Shift?.Description</p>
+                        </div>
+
+                        <div class="row text-left">
+                            <div class="col-md-6">
+                                <strong>Shift Code:</strong>
+                            </div>
+                            <div class="col-md-6">
+                                <code>@Model.Shift?.ShiftCode</code>
+                            </div>
+                        </div>
+
+                        <div class="row text-left">
+                            <div class="col-md-6">
+                                <strong>Start Time:</strong>
+                            </div>
+                            <div class="col-md-6">
+                                @Model.Shift?.StartTime.ToString(@"hh\:mm")
+                            </div>
+                        </div>
+
+                        <div class="row text-left">
+                            <div class="col-md-6">
+                                <strong>Relax Time:</strong>
+                            </div>
+                            <div class="col-md-6">
+                                @Model.Shift?.RelaxTime.ToString(@"hh\:mm") (Grace Period)
+                            </div>
+                        </div>
+
+                        <div class="row text-left">
+                            <div class="col-md-6">
+                                <strong>Off Time:</strong>
+                            </div>
+                            <div class="col-md-6">
+                                @Model.Shift?.OffTime.ToString(@"hh\:mm")
+                            </div>
+                        </div>
+
+                        <div class="row text-left">
+                            <div class="col-md-6">
+                                <strong>Total Hours:</strong>
+                            </div>
+                            <div class="col-md-6">
+                                <span class="badge bg-info">@Model.Shift?.TotalHours.ToString(@"hh\:mm")</span>
+                            </div>
+                        </div>
+
+                        <div class="row text-left">
+                            <div class="col-md-6">
+                                <strong>Late Threshold:</strong>
+                            </div>
+                            <div class="col-md-6">
+                                <span class="badge bg-warning">@Model.Shift?.LateThreshold.ToString(@"hh\:mm")</span>
+                                <small class="text-muted d-block">Check-in after this time is considered late</small>
+                            </div>
+                        </div>
+
+                        <div class="row text-left mt-3">
+                            <div class="col-md-6">
+                                <strong>Effective Date:</strong>
+                            </div>
+                            <div class="col-md-6">
+                                @Model.EffectiveDate.ToString("dd/MM/yyyy")
+                            </div>
+                        </div>
+
+                        @if (Model.EndDate.HasValue)
+                        {
+                            <div class="row text-left">
+                                <div class="col-md-6">
+                                    <strong>End Date:</strong>
+                                </div>
+                                <div class="col-md-6">
+                                    @Model.EndDate.Value.ToString("dd/MM/yyyy")
+                                </div>
+                            </div>
+                        }
+                    </div>
+                }
+                else
+                {
+                    <div class="text-center">
+                        <i class="fas fa-clock fa-4x text-muted mb-3"></i>
+                        <h4>No Shift Assigned</h4>
+                        <p class="text-muted">You don't have a shift assigned to you currently.</p>
+                        <p>Please contact your administrator to assign a shift.</p>
+                    </div>
+                }
+            </div>
+            <div class="card-footer text-center">
+                <a asp-controller="Attendance" asp-action="MyAttendance" class="btn btn-primary">
+                    <i class="fas fa-calendar-check"></i> View My Attendance
+                </a>
+                <a asp-controller="Home" asp-action="Dashboard" class="btn btn-secondary">
+                    <i class="fas fa-tachometer-alt"></i> Dashboard
+                </a>
+            </div>
+        </div>
+    </div>
+</div>

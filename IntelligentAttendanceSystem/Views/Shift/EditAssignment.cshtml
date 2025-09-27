@@ -1,0 +1,123 @@
+﻿@model UserShiftViewModel
+@{
+    ViewData["Title"] = "Edit Shift Assignment";
+}
+
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">Edit Shift Assignment</h3>
+                <div class="card-tools">
+                    <a asp-action="ShiftAssignments" class="btn btn-sm btn-secondary">Back to Assignments</a>
+                </div>
+            </div>
+            <div class="card-body">
+                <form asp-action="EditAssignment" method="post">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" asp-for="UserShiftId" />
+                    <input type="hidden" asp-for="UserId" />
+
+                    <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+
+                    <div class="form-group">
+                        <label class="control-label">User</label>
+                        <input type="text" class="form-control" value="@Model.UserName" readonly />
+                        <small class="form-text text-muted">User cannot be changed for existing assignment</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label asp-for="ShiftId" class="control-label"></label>
+                        <select asp-for="ShiftId" class="form-control" required>
+                            <option value="">-- Select Shift --</option>
+                            @if (ViewBag.Shifts != null)
+                            {
+                                foreach (var shift in ViewBag.Shifts)
+                                {
+                                    <option value="@shift.ShiftId" selected="@(shift.ShiftId == Model.ShiftId)">
+                                        @shift.DisplayName
+                                    </option>
+                                }
+                            }
+                        </select>
+                        <span asp-validation-for="ShiftId" class="text-danger"></span>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label asp-for="EffectiveDate" class="control-label"></label>
+                                <input asp-for="EffectiveDate" type="date" class="form-control" />
+                                <span asp-validation-for="EffectiveDate" class="text-danger"></span>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label asp-for="EndDate" class="control-label"></label>
+                                <input asp-for="EndDate" type="date" class="form-control" />
+                                <small class="form-text text-muted">Leave empty for ongoing assignment</small>
+                                <span asp-validation-for="EndDate" class="text-danger"></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-group form-check">
+                        <input asp-for="IsActive" class="form-check-input" />
+                        <label asp-for="IsActive" class="form-check-label">Active Assignment</label>
+                    </div>
+
+                    <div class="alert alert-info">
+                        <h6><i class="fas fa-info-circle"></i> Assignment Status</h6>
+                        <ul class="mb-0">
+                            <li><strong>Active + Effective Date in future:</strong> Scheduled assignment</li>
+                            <li><strong>Active + Effective Date in past:</strong> Current assignment</li>
+                            <li><strong>Inactive:</strong> Historical assignment</li>
+                            <li><strong>End Date set:</strong> Assignment will automatically end on that date</li>
+                        </ul>
+                    </div>
+
+                    <div class="form-group mt-4">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save"></i> Update Assignment
+                        </button>
+                        <a asp-action="ShiftAssignments" class="btn btn-secondary">Cancel</a>
+
+                        @if (Model.IsActive && (Model.EndDate == null || Model.EndDate >= DateTime.Today))
+                        {
+                            <form asp-action="EndAssignment" asp-route-id="@Model.UserShiftId" method="post" class="d-inline">
+                                @Html.AntiForgeryToken()
+                                <button type="submit" class="btn btn-warning"
+                                        onclick="return confirm('End this shift assignment effective today?')">
+                                    <i class="fas fa-stop"></i> End Assignment
+                                </button>
+                            </form>
+                        }
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+
+    <script>
+        $(document).ready(function() {
+            // Set minimum date for EndDate to EffectiveDate
+            $('#EffectiveDate').change(function() {
+                var effectiveDate = $(this).val();
+                if (effectiveDate) {
+                    $('#EndDate').attr('min', effectiveDate);
+                }
+            });
+
+            // Initialize min date if EffectiveDate already has a value
+            if ($('#EffectiveDate').val()) {
+                $('#EndDate').attr('min', $('#EffectiveDate').val());
+            }
+        });
+    </script>
+}

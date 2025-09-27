@@ -1,0 +1,205 @@
+﻿@model RegisterViewModel
+@{
+    ViewData["Title"] = "Register New User";
+}
+
+<div class="row justify-content-center">
+    <div class="col-md-10">
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">@ViewData["Title"]</h3>
+            </div>
+            <div class="card-body">
+                <form method="post">
+                    <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label asp-for="FullName"></label>
+                                <input asp-for="FullName" class="form-control" />
+                                <span asp-validation-for="FullName" class="text-danger"></span>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label asp-for="Email"></label>
+                                <input asp-for="Email" class="form-control" />
+                                <span asp-validation-for="Email" class="text-danger"></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label asp-for="Gender"></label>
+                                <div>
+                                    @foreach (var gender in Enum.GetValues(typeof(Gender)))
+                                    {
+                                        <div class="form-check form-check-inline">
+                                            <input class="form-check-input" type="radio" asp-for="Gender" value="@gender" />
+                                            <label class="form-check-label">@gender</label>
+                                        </div>
+                                    }
+                                </div>
+                                <span asp-validation-for="Gender" class="text-danger"></span>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label asp-for="Birthday"></label>
+                                <input asp-for="Birthday" type="date" class="form-control" />
+                                <span asp-validation-for="Birthday" class="text-danger"></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label asp-for="Address"></label>
+                        <textarea asp-for="Address" class="form-control" rows="2"></textarea>
+                        <span asp-validation-for="Address" class="text-danger"></span>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label asp-for="CredentialType"></label>
+                                <select asp-for="CredentialType" asp-items="Html.GetEnumSelectList<CredentialType>()" class="form-control">
+                                    <option value="">-- Select Credential Type --</option>
+                                </select>
+                                <span asp-validation-for="CredentialType" class="text-danger"></span>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label asp-for="CredentialNumber"></label>
+                                <input asp-for="CredentialNumber" class="form-control" />
+                                <span asp-validation-for="CredentialNumber" class="text-danger"></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label asp-for="Region"></label>
+                                <select asp-for="Region" asp-items="ViewBag.Countries" class="form-control">
+                                    <option value="">-- Select Country --</option>
+                                </select>
+                                <span asp-validation-for="Region" class="text-danger"></span>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label asp-for="UserType"></label>
+                                <select asp-for="UserType" asp-items="Html.GetEnumSelectList<UserType>()" class="form-control" id="userTypeSelect">
+                                    <option value="">-- Select User Type --</option>
+                                </select>
+                                <span asp-validation-for="UserType" class="text-danger"></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label asp-for="Password"></label>
+                                <input asp-for="Password" class="form-control" />
+                                <span asp-validation-for="Password" class="text-danger"></span>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label asp-for="ConfirmPassword"></label>
+                                <input asp-for="ConfirmPassword" class="form-control" />
+                                <span asp-validation-for="ConfirmPassword" class="text-danger"></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Student Fields -->
+                    <div id="studentFields" style="display: none;">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label asp-for="RollNumber"></label>
+                                    <input asp-for="RollNumber" class="form-control" />
+                                    <span asp-validation-for="RollNumber" class="text-danger"></span>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label asp-for="Class"></label>
+                                    <input asp-for="Class" class="form-control" />
+                                    <span asp-validation-for="Class" class="text-danger"></span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Staff Fields -->
+                    <div id="staffFields" style="display: none;">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label asp-for="EmployeeId"></label>
+                                    <input asp-for="EmployeeId" class="form-control" />
+                                    <span asp-validation-for="EmployeeId" class="text-danger"></span>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label asp-for="Department"></label>
+                                    <input asp-for="Department" class="form-control" />
+                                    <span asp-validation-for="Department" class="text-danger"></span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-group mt-4">
+                        <button type="submit" class="btn btn-success">Register</button>
+                        <button type="button" class="btn btn-info" id="addMoreBtn">Add More</button>
+                        <button type="reset" class="btn btn-warning">Reset</button>
+                        <a asp-action="Index" asp-controller="Home" class="btn btn-secondary">Cancel</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        $(document).ready(function () {
+            $('#userTypeSelect').change(function () {
+                var userType = $(this).val();
+
+                // Hide all fields first
+                $('#studentFields').hide();
+                $('#staffFields').hide();
+
+                // Show relevant fields based on selection
+                if (userType === '0') { // Student
+                    $('#studentFields').show();
+                } else if (userType === '1') { // Staff
+                    $('#staffFields').show();
+                }
+            });
+
+            // Trigger change on page load in case there's a selected value
+            $('#userTypeSelect').trigger('change');
+
+            // Add More button functionality
+            $('#addMoreBtn').click(function() {
+                // Clear the form but keep the user type selection
+                var userType = $('#userTypeSelect').val();
+                $('form')[0].reset();
+                $('#userTypeSelect').val(userType);
+                $('#userTypeSelect').trigger('change');
+            });
+        });
+    </script>
+}

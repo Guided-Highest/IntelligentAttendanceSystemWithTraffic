@@ -1,0 +1,38 @@
+﻿@inject SignInManager<ApplicationUser> SignInManager
+@inject UserManager<ApplicationUser> UserManager
+
+<ul class="navbar-nav">
+    @if (SignInManager.IsSignedIn(User))
+    {
+        var user = await UserManager.GetUserAsync(User);
+        <li class="nav-item dropdown">
+            <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                Hello, @user?.FullName!
+            </a>
+            <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+                <a class="dropdown-item" asp-area="" asp-controller="Profile" asp-action="Index">Profile</a>
+                <a class="dropdown-item" asp-area="" asp-controller="Attendance" asp-action="MyAttendance">My Attendance</a>
+                <div class="dropdown-divider"></div>
+                @if (User.IsInRole("Admin"))
+                {
+                    <a class="dropdown-item" asp-area="" asp-controller="Account" asp-action="Register">Register User</a>
+                    <a class="dropdown-item" asp-area="" asp-controller="Attendance" asp-action="Index">Manage Attendance</a>
+                }
+            </div>
+        </li>
+        <li class="nav-item">
+            <form class="form-inline" asp-area="" asp-controller="Account" asp-action="Logout" method="post">
+                <button type="submit" class="nav-link btn btn-link text-dark">Logout</button>
+            </form>
+        </li>
+    }
+    else
+    {
+        <li class="nav-item">
+            <a class="nav-link text-dark" asp-area="" asp-controller="Account" asp-action="Register">Register</a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link text-dark" asp-area="" asp-controller="Account" asp-action="Login">Login</a>
+        </li>
+    }
+</ul>

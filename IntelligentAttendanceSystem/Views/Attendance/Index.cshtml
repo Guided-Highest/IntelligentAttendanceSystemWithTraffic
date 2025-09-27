@@ -1,0 +1,86 @@
+﻿@model AttendanceIndexViewModel
+@{
+    ViewData["Title"] = "Attendance Records";
+}
+
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">Attendance Records</h3>
+                <div class="card-tools">
+                    <a asp-action="MarkIndividual" class="btn btn-primary btn-sm">Mark Individual</a>
+                    <a asp-action="MarkBulk" class="btn btn-success btn-sm">Mark Bulk</a>
+                </div>
+            </div>
+            <div class="card-body">
+                <!-- Fix: Use Model.Filter instead of ViewBag.Filter -->
+                <form method="get" class="form-inline mb-3">
+                    <div class="form-group mr-2">
+                        <label class="mr-2">User Type:</label>
+                        <select asp-for="Filter.UserType" asp-items="Html.GetEnumSelectList<UserType>()"
+                                class="form-control" onchange="this.form.submit()">
+                            <option value="">All</option>
+                        </select>
+                    </div>
+                    <div class="form-group mr-2">
+                        <label class="mr-2">From:</label>
+                        <input type="date" asp-for="Filter.FromDate" class="form-control" onchange="this.form.submit()">
+                    </div>
+                    <div class="form-group mr-2">
+                        <label class="mr-2">To:</label>
+                        <input type="date" asp-for="Filter.ToDate" class="form-control" onchange="this.form.submit()">
+                    </div>
+                    <div class="form-group mr-2">
+                        <input type="text" asp-for="Filter.SearchString" class="form-control" placeholder="Search...">
+                    </div>
+                    <button type="submit" class="btn btn-outline-secondary">Filter</button>
+                </form>
+
+                <table class="table table-bordered table-striped">
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>ID</th>
+                            <th>Date</th>
+                            <th>Check In</th>
+                            <th>Check Out</th>
+                            <th>Status</th>
+                            <th>Remarks</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in Model.Attendances)
+                        {
+                            <tr>
+                                <td>@item.FullName</td>
+                                <td>@item.Identifier</td>
+                                <td>@item.Date.ToString("dd/MM/yyyy")</td>
+                                <td>@item.CheckInTime.ToString("HH:mm")</td>
+                                <td>@(item.CheckOutTime?.ToString("HH:mm") ?? "-")</td>
+                                <td>
+                                    <span class="badge bg-@GetStatusBadge(item.Status)">@item.Status</span>
+                                </td>
+                                <td>@item.Remarks</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+@functions {
+    string GetStatusBadge(AttendanceStatus status)
+    {
+        return status switch
+        {
+            AttendanceStatus.Present => "success",
+            AttendanceStatus.Absent => "danger",
+            AttendanceStatus.Late => "warning",
+            AttendanceStatus.HalfDay => "info",
+            _ => "secondary"
+        };
+    }
+}

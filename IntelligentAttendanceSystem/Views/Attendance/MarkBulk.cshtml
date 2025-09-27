@@ -1,0 +1,139 @@
+﻿@model BulkAttendanceViewModel
+@{
+    ViewData["Title"] = "Mark Bulk Attendance";
+}
+
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">Mark Bulk Attendance</h3>
+            </div>
+            <div class="card-body">
+                <form asp-action="MarkBulk" method="post" id="bulkForm">
+                    <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <label asp-for="Date" class="control-label"></label>
+                                <input asp-for="Date" type="date" class="form-control" />
+                                <span asp-validation-for="Date" class="text-danger"></span>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <label asp-for="UserType" class="control-label"></label>
+                                <select asp-for="UserType" asp-items="Html.GetEnumSelectList<UserType>()" class="form-control" id="userTypeSelect">
+                                    <option value="">-- Select User Type --</option>
+                                </select>
+                                <span asp-validation-for="UserType" class="text-danger"></span>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <label class="control-label">Actions</label>
+                                <div>
+                                    <button type="button" id="markAllPresent" class="btn btn-success btn-sm">Mark All Present</button>
+                                    <button type="button" id="markAllAbsent" class="btn btn-danger btn-sm">Mark All Absent</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="attendanceTable" style="display: none;">
+                        <h5>Attendance List</h5>
+                        <table class="table table-bordered">
+                            <thead>
+                                <tr>
+                                    <th>Name</th>
+                                    <th>ID</th>
+                                    <th>Status</th>
+                                    <th>Check In Time</th>
+                                    <th>Remarks</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @for (int i = 0; i < Model.AttendanceItems.Count; i++)
+                                {
+                                    <tr>
+                                        <td>
+                                            @Model.AttendanceItems[i].FullName
+                                            <input type="hidden" asp-for="AttendanceItems[i].UserId" />
+                                            <input type="hidden" asp-for="AttendanceItems[i].FullName" />
+                                            <input type="hidden" asp-for="AttendanceItems[i].Identifier" />
+                                        </td>
+                                        <td>@Model.AttendanceItems[i].Identifier</td>
+                                        <td>
+                                            <select asp-for="AttendanceItems[i].Status" asp-items="Html.GetEnumSelectList<AttendanceStatus>()" class="form-control form-control-sm">
+                                            </select>
+                                        </td>
+                                        <td>
+                                            <input asp-for="AttendanceItems[i].CheckInTime" type="time" class="form-control form-control-sm" />
+                                        </td>
+                                        <td>
+                                            <input asp-for="AttendanceItems[i].Remarks" class="form-control form-control-sm" placeholder="Remarks" />
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+
+                        <div class="form-group">
+                            <button type="submit" class="btn btn-primary">Submit Bulk Attendance</button>
+                            <a asp-action="Index" class="btn btn-secondary">Back to List</a>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+
+    <script>
+        $(document).ready(function() {
+            // Set default date to today
+            var today = new Date().toISOString().split('T')[0];
+            $('#Date').val(today);
+
+            // Show/hide table based on user type selection
+            $('#userTypeSelect').change(function() {
+                var userType = $(this).val();
+                if (userType) {
+                    // Reload the page with the selected user type
+                    window.location.href = '@Url.Action("MarkBulk")' + '?userType=' + userType;
+                }
+            });
+
+            // Mark all present
+            $('#markAllPresent').click(function() {
+                $('select[name*="Status"]').val('0'); // Present
+            });
+
+            // Mark all absent
+            $('#markAllAbsent').click(function() {
+                $('select[name*="Status"]').val('1'); // Absent
+            });
+
+            // Set default check-in time for all rows
+            $('input[name*="CheckInTime"]').each(function() {
+                if (!$(this).val()) {
+                    var now = new Date();
+                    var timeString = now.getHours().toString().padStart(2, '0') + ':' +
+                                   now.getMinutes().toString().padStart(2, '0');
+                    $(this).val('09:00'); // Default to 9:00 AM
+                }
+            });
+
+            // Show table if there are items
+            if (@Model.AttendanceItems.Count > 0) {
+                $('#attendanceTable').show();
+            }
+        });
+    </script>
+}

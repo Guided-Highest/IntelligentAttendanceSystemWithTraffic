@@ -1,0 +1,110 @@
+﻿@{
+    ViewData["Title"] = "Dashboard";
+    var todayAttendance = ViewBag.TodayAttendance as Attendance;
+}
+
+<div class="row">
+    <div class="col-12">
+        <h2>Welcome to your Dashboard</h2>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title">Today's Attendance</h5>
+            </div>
+            <div class="card-body">
+                @if (todayAttendance != null)
+                {
+                    <div class="alert alert-success">
+                        <strong>Checked In:</strong> @todayAttendance.CheckInTime.ToString("HH:mm")
+                        <br />
+                        @if (todayAttendance.CheckOutTime.HasValue)
+                        {
+                            <strong>Checked Out:</strong>
+                            @todayAttendance.CheckOutTime.Value.ToString("HH:mm")
+                        }
+                        else
+                        {
+                            <a asp-action="CheckOut" asp-controller="Attendance" class="btn btn-warning btn-sm">Check Out</a>
+                        }
+                    </div>
+                }
+                else
+                {
+                    <div class="alert alert-info">
+                        <p>You haven't checked in today.</p>
+                        <a asp-action="CheckIn" asp-controller="Attendance" class="btn btn-primary">Check In Now</a>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title">Quick Actions</h5>
+            </div>
+            <div class="card-body">
+                <div class="list-group">
+                    <a asp-action="MyAttendance" asp-controller="Attendance" class="list-group-item list-group-item-action">
+                        View My Attendance
+                    </a>
+                    <a asp-action="CheckIn" asp-controller="Attendance" class="list-group-item list-group-item-action">
+                        Check In
+                    </a>
+                    <a asp-action="CheckOut" asp-controller="Attendance" class="list-group-item list-group-item-action">
+                        Check Out
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title">Attendance Summary</h5>
+            </div>
+            <div class="card-body">
+                <p>View your monthly attendance summary and reports.</p>
+                <a asp-action="MyAttendance" asp-controller="Attendance" class="btn btn-info">View Reports</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+@if (User.IsInRole("Admin"))
+{
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title">Admin Quick Links</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-3">
+                            <a asp-action="Register" asp-controller="Account" class="btn btn-success btn-block mb-2">Register User</a>
+                        </div>
+                        <div class="col-md-3">
+                            <a asp-action="Index" asp-controller="Attendance" class="btn btn-primary btn-block mb-2">Manage Attendance</a>
+                        </div>
+                        <div class="col-md-3">
+                            <a asp-action="MarkBulk" asp-controller="Attendance" class="btn btn-warning btn-block mb-2">Bulk Attendance</a>
+                        </div>
+                        <div class="col-md-3">
+                            <a asp-action="Reports" asp-controller="Attendance" class="btn btn-info btn-block mb-2">Generate Reports</a>
+                        </div>
+                        <div class="col-md-3">
+                            <a asp-action="Index" asp-controller="shift" class="btn btn-danger btn-block mb-2">Manage Shift</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+}

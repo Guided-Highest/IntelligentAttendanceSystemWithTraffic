@@ -1,0 +1,73 @@
+﻿@model IEnumerable<UserShift>
+@{
+    ViewData["Title"] = "User Shift History";
+}
+
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">Shift History for @ViewBag.UserName</h3>
+                <div class="card-tools">
+                    <a asp-action="ShiftAssignments" class="btn btn-sm btn-secondary">Back to Assignments</a>
+                </div>
+            </div>
+            <div class="card-body">
+                <table class="table table-bordered table-striped">
+                    <thead class="thead-dark">
+                        <tr>
+                            <th>Shift</th>
+                            <th>Effective Date</th>
+                            <th>End Date</th>
+                            <th>Status</th>
+                            <th>Duration</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var assignment in Model)
+                        {
+                            <tr>
+                                <td>
+                                    <strong>@assignment.Shift?.ShiftName</strong>
+                                    <br />
+                                    <small class="text-muted">@assignment.Shift?.StartTime.ToString(@"hh\:mm") - @assignment.Shift?.OffTime.ToString(@"hh\:mm")</small>
+                                </td>
+                                <td>@assignment.EffectiveDate.ToString("dd/MM/yyyy")</td>
+                                <td>@(assignment.EndDate?.ToString("dd/MM/yyyy") ?? "Present")</td>
+                                <td>
+                                    @if (assignment.IsActive && assignment.EffectiveDate <= DateTime.Today &&
+                                                                    (assignment.EndDate == null || assignment.EndDate >= DateTime.Today))
+                                    {
+                                        <span class="badge bg-success">Current</span>
+                                    }
+                                    else if (assignment.IsActive && assignment.EffectiveDate > DateTime.Today)
+                                    {
+                                        <span class="badge bg-info">Scheduled</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-secondary">Past</span>
+                                    }
+                                </td>
+                                <td>
+                                    @{
+                                        var endDate = assignment.EndDate ?? DateTime.Today;
+                                        var duration = (endDate - assignment.EffectiveDate).Days + 1;
+                                    }
+                                    @duration day(s)
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+
+                @if (!Model.Any())
+                {
+                    <div class="alert alert-info text-center">
+                        <h5>No shift history found for this user.</h5>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,175 @@
+﻿@model ShiftAssignmentViewModel
+@{
+    ViewData["Title"] = "Assign Shift to Users";
+}
+
+<div class="row">
+    <div class="col-md-10">
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">Assign Shift to Users</h3>
+                <div class="card-tools">
+                    <a asp-action="Index" class="btn btn-sm btn-secondary">Back to Shifts</a>
+                </div>
+            </div>
+            <div class="card-body">
+                <form asp-action="AssignShift" method="post" id="assignForm">
+                    @Html.AntiForgeryToken()
+
+                    <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label asp-for="ShiftId" class="control-label"></label>
+                                <select asp-for="ShiftId" class="form-control" required>
+                                    <option value="">-- Select Shift --</option>
+                                    @if (ViewBag.Shifts != null)
+                                    {
+                                        foreach (var shift in ViewBag.Shifts)
+                                        {
+                                            <option value="@shift.ShiftId">@shift.DisplayName</option>
+                                        }
+                                    }
+                                </select>
+                                <span asp-validation-for="ShiftId" class="text-danger"></span>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label asp-for="EffectiveDate" class="control-label"></label>
+                                <input asp-for="EffectiveDate" type="date" class="form-control" />
+                                <span asp-validation-for="EffectiveDate" class="text-danger"></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="control-label">Select Users</label>
+
+                        <!-- Select All Controls -->
+                        <div class="mb-2">
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="checkbox" id="selectAll" />
+                                <label class="form-check-label" for="selectAll">
+                                    <strong>Select All Users</strong>
+                                </label>
+                            </div>
+                            <span class="badge bg-info ml-2" id="selectedCount">0 users selected</span>
+                        </div>
+
+                        <!-- Users List -->
+                        <div style="max-height: 400px; overflow-y: auto; border: 1px solid #ddd; padding: 15px; border-radius: 5px;">
+                            @if (ViewBag.Users != null)
+                            {
+                                <div class="row">
+                                    @foreach (var user in ViewBag.Users)
+                                    {
+                                        <div class="col-md-6 mb-2">
+                                            <div class="form-check">
+                                                <input class="form-check-input user-checkbox" type="checkbox"
+                                                       name="SelectedUserIds" value="@user.UserId"
+                                                       id="user_@user.UserId" />
+                                                <label class="form-check-label" for="user_@user.UserId" style="font-size: 0.9rem;">
+                                                    @user.DisplayName
+                                                </label>
+                                            </div>
+                                        </div>
+                                    }
+                                </div>
+                            }
+                            else
+                            {
+                                <div class="alert alert-warning text-center">
+                                    <i class="fas fa-exclamation-triangle"></i> No active users found.
+                                </div>
+                            }
+                        </div>
+                    </div>
+
+                    <div class="form-group mt-4">
+                        <button type="submit" class="btn btn-success">
+                            <i class="fas fa-user-check"></i> Assign Shift to Selected Users
+                        </button>
+                        <a asp-action="Index" class="btn btn-secondary">Cancel</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+
+    <script>
+        $(document).ready(function() {
+            // Set default date to today
+            var today = new Date().toISOString().split('T')[0];
+            $('#EffectiveDate').val(today);
+
+            // Select all functionality
+            $('#selectAll').change(function() {
+                $('.user-checkbox').prop('checked', this.checked);
+                updateSelectedCount();
+            });
+
+            // Update select all when individual checkboxes change
+            $('.user-checkbox').change(function() {
+                if (!this.checked) {
+                    $('#selectAll').prop('checked', false);
+                } else {
+                    // Check if all are selected
+                    if ($('.user-checkbox:checked').length === $('.user-checkbox').length) {
+                        $('#selectAll').prop('checked', true);
+                    }
+                }
+                updateSelectedCount();
+            });
+
+            function updateSelectedCount() {
+                const selectedCount = $('.user-checkbox:checked').length;
+                $('#selectedCount').text(selectedCount + ' users selected');
+
+                // Update button text
+                const submitButton = $('button[type="submit"]');
+                if (selectedCount > 0) {
+                    submitButton.html('<i class="fas fa-user-check"></i> Assign Shift to ' + selectedCount + ' Users');
+                } else {
+                    submitButton.html('<i class="fas fa-user-check"></i> Assign Shift to Selected Users');
+                }
+            }
+
+            // Form validation
+            $('#assignForm').on('submit', function(e) {
+                const selectedCount = $('.user-checkbox:checked').length;
+                const shiftId = $('#ShiftId').val();
+
+                if (!shiftId) {
+                    e.preventDefault();
+                    alert('Please select a shift.');
+                    return false;
+                }
+
+                if (selectedCount === 0) {
+                    e.preventDefault();
+                    alert('Please select at least one user.');
+                    return false;
+                }
+
+                // Show confirmation for large assignments
+                if (selectedCount > 10) {
+                    if (!confirm(`You are about to assign this shift to ${selectedCount} users. Continue?`)) {
+                        e.preventDefault();
+                        return false;
+                    }
+                }
+            });
+
+            // Initial count update
+            updateSelectedCount();
+        });
+    </script>
+}

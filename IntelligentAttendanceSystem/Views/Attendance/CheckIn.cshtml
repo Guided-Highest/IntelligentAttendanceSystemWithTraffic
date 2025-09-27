@@ -1,0 +1,85 @@
+﻿@model AttendanceViewModel
+@{
+    ViewData["Title"] = "Check In";
+}
+
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">Check In</h3>
+            </div>
+            <div class="card-body">
+                <form asp-action="CheckIn" method="post">
+                    @Html.AntiForgeryToken()
+
+                    <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+
+                    <!-- Remove hidden fields for FullName and Identifier since they're not needed -->
+                    <input type="hidden" asp-for="UserId" />
+
+                    <div class="form-group">
+                        <label asp-for="Date" class="control-label"></label>
+                        <input asp-for="Date" type="date" class="form-control" readonly />
+                        <span asp-validation-for="Date" class="text-danger"></span>
+                    </div>
+
+                    <div class="form-group">
+                        <label asp-for="CheckInTime" class="control-label"></label>
+                        <input asp-for="CheckInTime" type="time" class="form-control" />
+                        <span asp-validation-for="CheckInTime" class="text-danger"></span>
+                    </div>
+
+                    <div class="form-group">
+                        <label asp-for="Status" class="control-label"></label>
+                        <select asp-for="Status" class="form-control">
+                            <option value="">-- Select Status --</option>
+                            <option value="0">Present</option>
+                            <option value="1">Absent</option>
+                            <option value="2">Late</option>
+                            <option value="3">Half Day</option>
+                        </select>
+                        <span asp-validation-for="Status" class="text-danger"></span>
+                    </div>
+
+                    <div class="form-group">
+                        <label asp-for="Remarks" class="control-label"></label>
+                        <textarea asp-for="Remarks" class="form-control" rows="3" placeholder="Optional remarks"></textarea>
+                        <span asp-validation-for="Remarks" class="text-danger"></span>
+                    </div>
+
+                    <div class="form-group">
+                        <button type="submit" class="btn btn-success btn-block">
+                            <i class="fas fa-sign-in-alt"></i> Check In
+                        </button>
+                        <a asp-action="Dashboard" asp-controller="Home" class="btn btn-secondary btn-block">
+                            <i class="fas fa-times"></i> Cancel
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+
+    <script>
+        $(document).ready(function() {
+            // Set current date and time
+            var now = new Date();
+            var dateString = now.toISOString().split('T')[0];
+            var timeString = now.getHours().toString().padStart(2, '0') + ':' +
+                           now.getMinutes().toString().padStart(2, '0');
+
+            $('#Date').val(dateString);
+            $('#CheckInTime').val(timeString);
+
+            // Set default status to Present
+            $('#Status').val('0');
+        });
+    </script>
+}

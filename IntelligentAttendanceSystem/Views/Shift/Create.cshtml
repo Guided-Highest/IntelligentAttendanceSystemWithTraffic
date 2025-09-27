@@ -1,0 +1,184 @@
+﻿@model ShiftViewModel
+@{
+    ViewData["Title"] = "Create New Shift";
+}
+
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">Create New Shift</h3>
+                <div class="card-tools">
+                    <a asp-action="Index" class="btn btn-sm btn-secondary">Back to List</a>
+                </div>
+            </div>
+            <div class="card-body">
+                <form asp-action="Create" method="post" id="shiftForm">
+                    @Html.AntiForgeryToken()
+
+                    <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label asp-for="ShiftName" class="control-label"></label>
+                                <input asp-for="ShiftName" class="form-control" placeholder="e.g., Morning Shift, Evening Shift" />
+                                <span asp-validation-for="ShiftName" class="text-danger"></span>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label asp-for="ShiftCode" class="control-label"></label>
+                                <input asp-for="ShiftCode" class="form-control" placeholder="e.g., MORN, EVE, NIGHT" />
+                                <span asp-validation-for="ShiftCode" class="text-danger"></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <label asp-for="StartTime" class="control-label"></label>
+                                <input asp-for="StartTime" type="time" class="form-control" />
+                                <span asp-validation-for="StartTime" class="text-danger"></span>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <label asp-for="RelaxTimeMinutes" class="control-label">Relax Time (Minutes)</label>
+                                <input asp-for="RelaxTimeMinutes" type="number" min="0" max="240" class="form-control" />
+                                <small class="form-text text-muted">Grace period for late check-in (0-240 minutes)</small>
+                                <span asp-validation-for="RelaxTimeMinutes" class="text-danger"></span>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <label asp-for="OffTime" class="control-label"></label>
+                                <input asp-for="OffTime" type="time" class="form-control" />
+                                <span asp-validation-for="OffTime" class="text-danger"></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label asp-for="Description" class="control-label"></label>
+                        <textarea asp-for="Description" class="form-control" rows="3" placeholder="Optional shift description"></textarea>
+                        <span asp-validation-for="Description" class="text-danger"></span>
+                    </div>
+
+                    <div class="form-group form-check">
+                        <input asp-for="IsActive" class="form-check-input" />
+                        <label asp-for="IsActive" class="form-check-label">Active Shift</label>
+                    </div>
+
+                    <!-- Shift Preview -->
+                    <div class="card bg-light mt-3">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">Shift Preview</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <strong>Shift Details:</strong>
+                                    <div id="previewShiftName">-</div>
+                                    <div id="previewShiftCode">-</div>
+                                </div>
+                                <div class="col-md-6">
+                                    <strong>Timings:</strong>
+                                    <div id="previewTimings">-</div>
+                                    <div id="previewTotalHours">-</div>
+                                    <div id="previewLateThreshold">-</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-group mt-4">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save"></i> Create Shift
+                        </button>
+                        <a asp-action="Index" class="btn btn-secondary">Cancel</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+
+    <script>
+        $(document).ready(function() {
+            // Set default values
+            $('#StartTime').val('09:00');
+            $('#OffTime').val('17:00');
+            $('#RelaxTimeMinutes').val('15');
+
+            // Update preview when values change
+            $('input, textarea').on('input change', updatePreview);
+
+            function updatePreview() {
+                // Shift details
+                const shiftName = $('#ShiftName').val() || 'Not set';
+                const shiftCode = $('#ShiftCode').val() || 'Not set';
+                $('#previewShiftName').text(`Name: ${shiftName}`);
+                $('#previewShiftCode').text(`Code: ${shiftCode}`);
+
+                // Timings
+                const startTime = $('#StartTime').val() || '09:00';
+                const offTime = $('#OffTime').val() || '17:00';
+                const relaxMinutes = parseInt($('#RelaxTimeMinutes').val()) || 15;
+
+                if (startTime && offTime) {
+                    const start = new Date(`2000-01-01T${startTime}`);
+                    const off = new Date(`2000-01-01T${offTime}`);
+                    const relaxMs = relaxMinutes * 60 * 1000;
+                    const lateThreshold = new Date(start.getTime() + relaxMs);
+
+                    // Calculate total hours
+                    let totalMs = off - start;
+                    if (totalMs < 0) {
+                        totalMs += 24 * 60 * 60 * 1000; // Add 24 hours if overnight
+                    }
+                    const totalHours = Math.floor(totalMs / (60 * 60 * 1000));
+                    const totalMinutes = Math.floor((totalMs % (60 * 60 * 1000)) / (60 * 1000));
+
+                    $('#previewTimings').text(`Time: ${startTime} - ${offTime}`);
+                    $('#previewTotalHours').text(`Total: ${totalHours}h ${totalMinutes}m`);
+                    $('#previewLateThreshold').text(`Late after: ${formatTime(lateThreshold)} (${relaxMinutes} min grace)`);
+                } else {
+                    $('#previewTimings').text('-');
+                    $('#previewTotalHours').text('-');
+                    $('#previewLateThreshold').text('-');
+                }
+            }
+
+            function formatTime(date) {
+                return date.toTimeString().substring(0, 5);
+            }
+
+            // Validate off time is after start time
+            $('#shiftForm').on('submit', function(e) {
+                const startTime = $('#StartTime').val();
+                const offTime = $('#OffTime').val();
+
+                if (startTime && offTime) {
+                    const start = new Date(`2000-01-01T${startTime}`);
+                    const off = new Date(`2000-01-01T${offTime}`);
+
+                    if (off <= start && offTime !== '00:00') {
+                        e.preventDefault();
+                        alert('Off Time must be after Start Time. For overnight shifts, use times like 22:00 to 06:00.');
+                        return false;
+                    }
+                }
+            });
+
+            // Initial preview update
+            updatePreview();
+        });
+    </script>
+}

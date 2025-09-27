@@ -1,0 +1,255 @@
+﻿@model ProfileViewModel
+@{
+    ViewData["Title"] = "My Profile";
+}
+
+<div class="row justify-content-center">
+    <div class="col-md-10">
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">@ViewData["Title"]</h3>
+            </div>
+            <div class="card-body">
+                @if (TempData["SuccessMessage"] != null)
+                {
+                    <div class="alert alert-success alert-dismissible fade show" role="alert">
+                        @TempData["SuccessMessage"]
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                }
+
+                <form method="post" enctype="multipart/form-data">
+                    <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+                    <input type="hidden" asp-for="Id" />
+                    <!-- Profile Picture Section -->
+                    <div class="text-center mb-4">
+                        <div class="profile-picture-container">
+                            <!-- In the profile picture section -->
+                            <img id="profileImage" src="@(Model.HasProfilePicture ? $"/Profile/Picture/{Model.Id}" : "/images/default-avatar.png")"
+                                 class="profile-picture" alt="Profile Picture">
+                            <div class="mt-2">
+                                <input type="file" asp-for="ProfilePictureFile" class="form-control d-none" id="profilePictureInput"
+                                       accept=".jpg,.jpeg,.png,.gif" onchange="previewImage(this)">
+                                <button type="button" class="btn btn-outline-primary btn-sm" onclick="document.getElementById('profilePictureInput').click()">
+                                    Change Photo
+                                </button>
+                                @if (Model.HasProfilePicture)
+                                {
+                                    <button type="button" class="btn btn-outline-danger btn-sm" data-bs-toggle="modal" data-bs-target="#removePictureModal">
+                                        Remove
+                                    </button>
+                                }
+                            </div>
+                            <span asp-validation-for="ProfilePictureFile" class="text-danger"></span>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label asp-for="FullName"></label>
+                                <input asp-for="FullName" class="form-control" />
+                                <span asp-validation-for="FullName" class="text-danger"></span>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label asp-for="Email"></label>
+                                <input asp-for="Email" class="form-control" readonly />
+                                <small class="form-text text-muted">Email cannot be changed</small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label asp-for="Gender"></label>
+                                <div>
+                                    @foreach (var gender in Enum.GetValues(typeof(Gender)))
+                                    {
+                                        <div class="form-check form-check-inline">
+                                            <input class="form-check-input" type="radio" asp-for="Gender" value="@gender" />
+                                            <label class="form-check-label">@gender</label>
+                                        </div>
+                                    }
+                                </div>
+                                <span asp-validation-for="Gender" class="text-danger"></span>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label asp-for="Birthday"></label>
+                                <input asp-for="Birthday" type="date" class="form-control" />
+                                <span asp-validation-for="Birthday" class="text-danger"></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label asp-for="Address"></label>
+                        <textarea asp-for="Address" class="form-control" rows="2"></textarea>
+                        <span asp-validation-for="Address" class="text-danger"></span>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label asp-for="CredentialType"></label>
+                                <select asp-for="CredentialType" asp-items="Html.GetEnumSelectList<CredentialType>()" class="form-control">
+                                    <option value="">-- Select Credential Type --</option>
+                                </select>
+                                <span asp-validation-for="CredentialType" class="text-danger"></span>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label asp-for="CredentialNumber"></label>
+                                <input asp-for="CredentialNumber" class="form-control" />
+                                <span asp-validation-for="CredentialNumber" class="text-danger"></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label asp-for="Region"></label>
+                                <select asp-for="Region" asp-items="ViewBag.Countries" class="form-control">
+                                    <option value="">-- Select Country --</option>
+                                </select>
+                                <span asp-validation-for="Region" class="text-danger"></span>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label asp-for="PhoneNumber"></label>
+                                <input asp-for="PhoneNumber" class="form-control" />
+                                <span asp-validation-for="PhoneNumber" class="text-danger"></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- User Type Specific Fields -->
+                    @if (Model.UserType == UserType.Student)
+                    {
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label asp-for="RollNumber"></label>
+                                    <input asp-for="RollNumber" class="form-control" />
+                                    <span asp-validation-for="RollNumber" class="text-danger"></span>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label asp-for="Class"></label>
+                                    <input asp-for="Class" class="form-control" />
+                                    <span asp-validation-for="Class" class="text-danger"></span>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                    else if (Model.UserType == UserType.Staff)
+                    {
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label asp-for="EmployeeId"></label>
+                                    <input asp-for="EmployeeId" class="form-control" />
+                                    <span asp-validation-for="EmployeeId" class="text-danger"></span>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label asp-for="Department"></label>
+                                    <input asp-for="Department" class="form-control" />
+                                    <span asp-validation-for="Department" class="text-danger"></span>
+                                </div>
+                            </div>
+                        </div>
+                    }
+
+                    <!-- Readonly Information -->
+                    <div class="row mt-3">
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <label class="form-label">User Type</label>
+                                <input type="text" class="form-control" value="@Model.UserType" readonly>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <label class="form-label">Account Created</label>
+                                <input type="text" class="form-control" value="@Model.CreatedDate.ToString("MMMM dd, yyyy")" readonly>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <label class="form-label">Current Shift</label>
+                                <input type="text" class="form-control" value="@(Model.CurrentShiftName ?? "Not assigned")" readonly>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-group mt-4">
+                        <button type="submit" class="btn btn-primary">Update Profile</button>
+                        <a asp-action="ChangePassword" class="btn btn-outline-secondary">Change Password</a>
+                        <a asp-action="Index" asp-controller="Home" class="btn btn-secondary">Back to Home</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Remove Picture Modal -->
+<div class="modal fade" id="removePictureModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Remove Profile Picture</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                Are you sure you want to remove your profile picture?
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <form asp-action="RemoveProfilePicture" method="post">
+                    <button type="submit" class="btn btn-danger">Remove Picture</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        function previewImage(input) {
+            if (input.files && input.files[0]) {
+                var reader = new FileReader();
+                reader.onload = function(e) {
+                    document.getElementById('profileImage').src = e.target.result;
+                }
+                reader.readAsDataURL(input.files[0]);
+            }
+        }
+    </script>
+
+    <style>
+        .profile-picture {
+            width: 150px;
+            height: 150px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 3px solid #dee2e6;
+        }
+
+        .profile-picture-container {
+            position: relative;
+            display: inline-block;
+        }
+    </style>
+}

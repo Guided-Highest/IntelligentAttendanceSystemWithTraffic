@@ -1,0 +1,156 @@
+﻿@model IEnumerable<UserShift>
+@{
+    ViewData["Title"] = "Shift Assignments";
+}
+
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">Shift Assignments</h3>
+                <div class="card-tools">
+                    <a asp-action="AssignShift" class="btn btn-primary btn-sm">New Assignment</a>
+                    <a asp-action="Index" class="btn btn-secondary btn-sm">Back to Shifts</a>
+                </div>
+            </div>
+            <div class="card-body">
+                @await Html.PartialAsync("_AlertMessages")
+
+                <!-- Filter Options -->
+                <div class="row mb-3">
+                    <div class="col-md-12">
+                        <div class="btn-group btn-group-toggle" data-toggle="buttons">
+                            <label class="btn btn-outline-primary active">
+                                <input type="radio" name="statusFilter" value="all" checked> All Assignments
+                            </label>
+                            <label class="btn btn-outline-success">
+                                <input type="radio" name="statusFilter" value="active"> Active
+                            </label>
+                            <label class="btn btn-outline-info">
+                                <input type="radio" name="statusFilter" value="scheduled"> Scheduled
+                            </label>
+                            <label class="btn btn-outline-secondary">
+                                <input type="radio" name="statusFilter" value="inactive"> Inactive
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <table class="table table-bordered table-striped" id="assignmentsTable">
+                    <thead class="thead-dark">
+                        <tr>
+                            <th>User</th>
+                            <th>Shift</th>
+                            <th>Effective Date</th>
+                            <th>End Date</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var assignment in Model)
+                        {
+                            var status = "inactive";
+                            if (assignment.IsActive)
+                            {
+                                if (assignment.EffectiveDate <= DateTime.Today && (assignment.EndDate == null || assignment.EndDate >= DateTime.Today))
+                                {
+                                    status = "active";
+                                }
+                                else if (assignment.EffectiveDate > DateTime.Today)
+                                {
+                                    status = "scheduled";
+                                }
+                            }
+
+                            <tr data-status="@status">
+                                <td>
+                                    <strong>@assignment.User?.FullName</strong>
+                                    <br />
+                                    <small class="text-muted">@assignment.User?.UserType</small>
+                                    <br />
+                                    <a asp-action="UserShiftHistory" asp-route-userId="@assignment.UserId"
+                                       class="badge bg-info bg-sm">View History</a>
+                                </td>
+                                <td>
+                                    @assignment.Shift?.ShiftName
+                                    <br />
+                                    <small class="text-muted">@assignment.Shift?.StartTime.ToString(@"hh\:mm") - @assignment.Shift?.OffTime.ToString(@"hh\:mm")</small>
+                                </td>
+                                <td>@assignment.EffectiveDate.ToString("dd/MM/yyyy")</td>
+                                <td>@(assignment.EndDate?.ToString("dd/MM/yyyy") ?? "Ongoing")</td>
+                                <td>
+                                    @if (status == "active")
+                                    {
+                                        <span class="badge bg-success">Active</span>
+                                    }
+                                    else if (status == "scheduled")
+                                    {
+                                        <span class="badge bg-info">Scheduled</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-secondary">Inactive</span>
+                                    }
+                                </td>
+                                <td>
+                                    <div class="btn-group-vertical btn-group-sm">
+                                        <a asp-action="EditAssignment" asp-route-id="@assignment.UserShiftId"
+                                           class="btn btn-outline-primary btn-sm mb-1">
+                                            <i class="fas fa-edit"></i> Edit
+                                        </a>
+
+                                        @if (status == "active")
+                                        {
+                                            <form asp-action="EndAssignment" asp-route-id="@assignment.UserShiftId" method="post" class="d-inline">
+                                                @Html.AntiForgeryToken()
+                                                <button type="submit" class="btn btn-outline-warning btn-sm mb-1"
+                                                        onclick="return confirm('End this shift assignment effective today?')">
+                                                    <i class="fas fa-stop"></i> End
+                                                </button>
+                                            </form>
+                                        }
+
+                                        <form asp-action="DeleteAssignment" asp-route-id="@assignment.UserShiftId" method="post" class="d-inline">
+                                            @Html.AntiForgeryToken()
+                                            <button type="submit" class="btn btn-outline-danger btn-sm"
+                                                    onclick="return confirm('Are you sure you want to delete this assignment? This action cannot be undone.')">
+                                                <i class="fas fa-trash"></i> Delete
+                                            </button>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+
+                @if (!Model.Any())
+                {
+                    <div class="alert alert-info text-center">
+                        <h5>No shift assignments found.</h5>
+                        <a asp-action="AssignShift" class="btn btn-primary">Create First Assignment</a>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function() {
+            // Filter functionality
+            $('input[name="statusFilter"]').change(function() {
+                var filter = $(this).val();
+                $('#assignmentsTable tbody tr').each(function() {
+                    if (filter === 'all') {
+                        $(this).show();
+                    } else {
+                        $(this).toggle($(this).data('status') === filter);
+                    }
+                });
+            });
+        });
+    </script>
+}
