@@ -16,9 +16,23 @@ namespace IntelligentAttendanceSystem.Data
         public DbSet<Attendance> Attendances { get; set; }
         public DbSet<Shift> Shifts { get; set; }
         public DbSet<UserShift> UserShifts { get; set; }
+        public DbSet<SystemDevice> SystemDevices { get; set; }
         protected override void OnModelCreating(ModelBuilder builder)
         {
             base.OnModelCreating(builder);
+
+            builder.Entity<SystemDevice>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.IPAddress).IsRequired().HasMaxLength(15);
+                entity.Property(e => e.Status).IsRequired().HasMaxLength(50);
+                entity.Property(e => e.DeviceType).IsRequired().HasMaxLength(100);
+                entity.Property(e => e.UserName).IsRequired().HasMaxLength(100);
+                entity.Property(e => e.Password).IsRequired().HasMaxLength(255);
+                entity.Property(e => e.MacAddress).HasMaxLength(17);
+                entity.Property(e => e.Gateway).HasMaxLength(17);
+                entity.Property(e => e.SubnetMask).HasMaxLength(15);
+            });
 
             // Shift configuration
             builder.Entity<Shift>(entity =>
@@ -55,6 +69,9 @@ namespace IntelligentAttendanceSystem.Data
             builder.Entity<ApplicationUser>()
                 .Ignore(u => u.CurrentShift)
                 .Ignore(u => u.CurrentShiftId);
+            builder.Entity<ApplicationUser>()
+        .HasIndex(e => new { e.CredentialType, e.CredentialNumber })
+        .IsUnique();
 
             // Configure relationships
             builder.Entity<Attendance>()

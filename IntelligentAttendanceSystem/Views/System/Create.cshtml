@@ -1,0 +1,173 @@
+﻿@model AddDevice
+
+@{
+    ViewData["Title"] = "Add New System Device";
+    Layout = "_Layout";
+}
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-md-12 mx-auto">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1>Add New System Device</h1>
+                <a asp-action="Index" class="btn btn-secondary">Back to List</a>
+            </div>
+
+            <div class="card">
+                <div class="card-header d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center">
+                    <h5 class="card-title mb-2 mb-md-0">Device Information</h5>
+                    <form method="post" class="header-buttons d-flex flex-wrap gap-2">
+                        <div class="row gx-3 gy-2 align-items-center">
+                            <div class="col-sm-4">
+                                <input asp-for="IpRange.IPStart" class="form-control" placeholder="192.168.1.1" />
+                            </div>
+                            <div class="col-sm-4">
+                                <input asp-for="IpRange.IPEnd" class="form-control" placeholder="192.168.1.255" />
+                            </div>
+                            <div class="col-sm-3">
+                                <button type="submit" asp-action="SearchDevices" class="btn btn-outline">
+                                    <i class="fas fa-sync-alt"></i> Scan
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="card-body">
+                    <!-- Messages -->
+                    @await Html.PartialAsync("_AlertMessages")
+                    @*   <form method="post">
+                        <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+                        <div class="row">
+                            <div class="col-md-3">
+                                <div class="mb-3">
+                                    <label asp-for="systemDevices[0].IPAddress" class="form-label"></label>
+                                    <input asp-for="systemDevices[0].IsInit" type="hidden" />
+                                    @if (Model.systemDevices[0].IsInit)
+                                    {
+                                        <input asp-for="systemDevices[0].IPAddress" type="hidden" />
+                                        <span class="form-control">@(Model.systemDevices[0].IPAddress)</span>
+                                    }
+                                    else
+                                    {
+                                        <input asp-for="systemDevices[0].IPAddress" class="form-control" placeholder="192.168.1.100" />
+                                    }
+                                    <span asp-validation-for="systemDevices[0].IPAddress" class="text-danger"></span>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="mb-3">
+                                    <label asp-for="systemDevices[0].Port" class="form-label"></label>
+                                    <input asp-for="systemDevices[0].Port" class="form-control" placeholder="37777" />
+                                    <span asp-validation-for="systemDevices[0].Port" class="text-danger"></span>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="mb-3">
+                                    <label asp-for="systemDevices[0].UserName" class="form-label"></label>
+                                    <input asp-for="systemDevices[0].UserName" class="form-control" placeholder="admin" />
+                                    <span asp-validation-for="systemDevices[0].UserName" class="text-danger"></span>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="mb-3">
+                                    <label asp-for="systemDevices[0].Password" class="form-label"></label>
+                                    <input asp-for="systemDevices[0].Password" type="password" class="form-control" />
+                                    <span asp-validation-for="systemDevices[0].Password" class="text-danger"></span>
+                                </div>
+                            </div>
+                            <div class="col-md-12">
+                                <hr />
+                            </div>
+                            <div class="col-md-3">
+                                <div class="mb-3">
+                                    <label asp-for="systemDevices[0].Status" class="form-label"></label>
+                                    <select asp-for="systemDevices[0].Status" class="form-select" disabled>
+                                        <option value="">Select Status</option>
+                                        <option value="Initialized">Initialized</option>
+                                        <option value="Initiated">Initiated</option>
+                                        <option value="Connected">Connected</option>
+                                        <option value="Disconnected">Disconnected</option>
+                                    </select>
+                                    <span asp-validation-for="systemDevices[0].Status" class="text-danger"></span>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="mb-3">
+                                    <label asp-for="systemDevices[0].IPVersion" class="form-label"></label>
+                                    <select asp-for="systemDevices[0].IPVersion" class="form-select" disabled>
+                                        <option value="">Select IP Version</option>
+                                        <option value="IPv4">IPv4</option>
+                                        <option value="IPv6">IPv6</option>
+                                    </select>
+                                    <span asp-validation-for="systemDevices[0].IPVersion" class="text-danger"></span>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="mb-3">
+                                    <label asp-for="systemDevices[0].SubnetMask" class="form-label"></label>
+                                    <input asp-for="systemDevices[0].SubnetMask" class="form-control" placeholder="255.255.255.0" disabled />
+                                    <span asp-validation-for="systemDevices[0].SubnetMask" class="text-danger"></span>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="mb-3">
+                                    <label asp-for="systemDevices[0].Gateway" class="form-label"></label>
+                                    <input asp-for="systemDevices[0].Gateway" class="form-control" placeholder="30:dd:aa:1c:be:47" disabled />
+                                    <span asp-validation-for="systemDevices[0].Gateway" class="text-danger"></span>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="mb-3">
+                                    <label asp-for="systemDevices[0].MacAddress" class="form-label"></label>
+                                    <input asp-for="systemDevices[0].MacAddress" class="form-control" placeholder="30:dd:aa:1c:be:47" disabled />
+                                    <span asp-validation-for="systemDevices[0].MacAddress" class="text-danger"></span>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="mb-3">
+                                    <label asp-for="systemDevices[0].DeviceType" class="form-label"></label>
+                                    <input asp-for="systemDevices[0].DeviceType" class="form-control" placeholder="HCVR" disabled />
+                                    <span asp-validation-for="systemDevices[0].DeviceType" class="text-danger"></span>
+                                </div>
+
+                            </div>
+                            <div class="col-md-3">
+                                <div class="mb-3">
+                                    <label asp-for="systemDevices[0].DetailType" class="form-label"></label>
+                                    <input asp-for="systemDevices[0].DetailType" class="form-control" placeholder="DH-XVR5104Hs-B" disabled />
+                                    <span asp-validation-for="systemDevices[0].DetailType" class="text-danger"></span>
+                                </div>
+
+                            </div>
+                            <div class="col-md-3">
+                                <div class="mb-3">
+                                    <label asp-for="systemDevices[0].HttpPort" class="form-label"></label>
+                                    <input asp-for="systemDevices[0].HttpPort" class="form-control" placeholder="80" disabled />
+                                    <span asp-validation-for="systemDevices[0].HttpPort" class="text-danger"></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                            @if (Model.systemDevices[0].IsInit == false)
+                            {
+                                <button type="submit" asp-action="InitDev" class="btn btn-primary">Init... Device</button>
+                            }
+                            else if (Model.systemDevices[0].IsInit == true)
+                            {
+                                <button type="submit" asp-action="Create" class="btn btn-primary">Create Device</button>
+                                <a asp-action="Index" class="btn btn-secondary">Cancel</a>
+                            }
+                        </div>
+                    </form> *@
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+}

@@ -1,0 +1,79 @@
+﻿@model SystemDevice
+
+@{
+    ViewData["Title"] = "Device Details";
+    Layout = "_Layout";
+}
+
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>Device Details</h1>
+        <div>
+            <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-warning">Edit</a>
+            <a asp-action="Index" class="btn btn-secondary">Back to List</a>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-8 mx-auto">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">System Device Information</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <dl class="row">
+                                <dt class="col-sm-4">Status:</dt>
+                                <dd class="col-sm-8">
+                                    <span class="badge @(Model.Status == "Initialized" ? "bg-success" : "bg-warning")">
+                                        @Model.Status
+                                    </span>
+                                </dd>
+
+                                <dt class="col-sm-4">IP Version:</dt>
+                                <dd class="col-sm-8">@Model.IPVersion</dd>
+
+                                <dt class="col-sm-4">IP Address:</dt>
+                                <dd class="col-sm-8">@Model.IPAddress</dd>
+
+                                <dt class="col-sm-4">Port:</dt>
+                                <dd class="col-sm-8">@Model.Port</dd>
+
+                                <dt class="col-sm-4">Subnet Mask:</dt>
+                                <dd class="col-sm-8">@Model.SubnetMask</dd>
+
+                                <dt class="col-sm-4">Gateway:</dt>
+                                <dd class="col-sm-8">@Model.Gateway</dd>
+
+                                <dt class="col-sm-4">MAC- Adress:</dt>
+                                <dd class="col-sm-8">@Model.MacAddress</dd>
+                            </dl>
+                        </div>
+                        <div class="col-md-6">
+                            <dl class="row">
+                                <dt class="col-sm-4">Device Type:</dt>
+                                <dd class="col-sm-8">@Model.DeviceType</dd>
+
+                                <dt class="col-sm-4">Detail Type:</dt>
+                                <dd class="col-sm-8">@Model.DetailType</dd>
+
+                                <dt class="col-sm-4">HTTP Port:</dt>
+                                <dd class="col-sm-8">@(Model.HttpPort?.ToString() ?? "N/A")</dd>
+
+                                <dt class="col-sm-4">Username:</dt>
+                                <dd class="col-sm-8">@Model.UserName</dd>
+
+                                <dt class="col-sm-4">Created Date:</dt>
+                                <dd class="col-sm-8">@Model.CreatedDate.ToString("g")</dd>
+
+                                <dt class="col-sm-4">Updated Date:</dt>
+                                <dd class="col-sm-8">@(Model.UpdatedDate?.ToString("g") ?? "Never")</dd>
+                            </dl>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

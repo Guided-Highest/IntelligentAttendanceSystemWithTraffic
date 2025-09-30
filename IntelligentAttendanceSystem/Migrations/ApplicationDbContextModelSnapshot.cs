@@ -147,6 +147,9 @@ namespace IntelligentAttendanceSystem.Migrations
                         .HasDatabaseName("UserNameIndex")
                         .HasFilter("[NormalizedUserName] IS NOT NULL");
 
+                    b.HasIndex("CredentialType", "CredentialNumber")
+                        .IsUnique();
+
                     b.ToTable("AspNetUsers", (string)null);
                 });
 
@@ -242,7 +245,7 @@ namespace IntelligentAttendanceSystem.Migrations
                         new
                         {
                             ShiftId = 1,
-                            CreatedDate = new DateTime(2025, 9, 25, 15, 14, 31, 71, DateTimeKind.Utc).AddTicks(5080),
+                            CreatedDate = new DateTime(2025, 9, 29, 11, 50, 45, 436, DateTimeKind.Utc).AddTicks(5767),
                             Description = "Standard morning shift",
                             IsActive = true,
                             OffTime = new TimeSpan(0, 17, 0, 0, 0),
@@ -254,7 +257,7 @@ namespace IntelligentAttendanceSystem.Migrations
                         new
                         {
                             ShiftId = 2,
-                            CreatedDate = new DateTime(2025, 9, 25, 15, 14, 31, 71, DateTimeKind.Utc).AddTicks(5083),
+                            CreatedDate = new DateTime(2025, 9, 29, 11, 50, 45, 436, DateTimeKind.Utc).AddTicks(5771),
                             Description = "Evening shift",
                             IsActive = true,
                             OffTime = new TimeSpan(0, 22, 0, 0, 0),
@@ -266,7 +269,7 @@ namespace IntelligentAttendanceSystem.Migrations
                         new
                         {
                             ShiftId = 3,
-                            CreatedDate = new DateTime(2025, 9, 25, 15, 14, 31, 71, DateTimeKind.Utc).AddTicks(5085),
+                            CreatedDate = new DateTime(2025, 9, 29, 11, 50, 45, 436, DateTimeKind.Utc).AddTicks(5774),
                             Description = "Night shift",
                             IsActive = true,
                             OffTime = new TimeSpan(0, 6, 0, 0, 0),
@@ -275,6 +278,74 @@ namespace IntelligentAttendanceSystem.Migrations
                             ShiftName = "Night Shift",
                             StartTime = new TimeSpan(0, 22, 0, 0, 0)
                         });
+                });
+
+            modelBuilder.Entity("IntelligentAttendanceSystem.Models.SystemDevice", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("DetailType")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("DeviceType")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("Gateway")
+                        .HasMaxLength(17)
+                        .HasColumnType("nvarchar(17)");
+
+                    b.Property<int?>("HttpPort")
+                        .HasColumnType("int");
+
+                    b.Property<string>("IPAddress")
+                        .IsRequired()
+                        .HasMaxLength(15)
+                        .HasColumnType("nvarchar(15)");
+
+                    b.Property<string>("IPVersion")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("MacAddress")
+                        .HasMaxLength(17)
+                        .HasColumnType("nvarchar(17)");
+
+                    b.Property<string>("Password")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)");
+
+                    b.Property<int>("Port")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("SubnetMask")
+                        .HasMaxLength(15)
+                        .HasColumnType("nvarchar(15)");
+
+                    b.Property<DateTime?>("UpdatedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("UserName")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("SystemDevices");
                 });
 
             modelBuilder.Entity("IntelligentAttendanceSystem.Models.UserShift", b =>

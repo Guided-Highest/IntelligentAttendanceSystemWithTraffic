@@ -1,0 +1,127 @@
+﻿@model SystemDevice
+
+@{
+    ViewData["Title"] = "Edit System Device";
+    Layout = "_Layout";
+}
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-md-8 mx-auto">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1>Edit System Device</h1>
+                <a asp-action="Index" class="btn btn-secondary">Back to List</a>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Device Information</h5>
+                </div>
+                <div class="card-body">
+                    <form asp-action="Edit" method="post">
+                        <input type="hidden" asp-for="Id" />
+                        <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label asp-for="Status" class="form-label"></label>
+                                    <select asp-for="Status" class="form-select">
+                                        <option value="">Select Status</option>
+                                        <option value="Initialized">Initialized</option>
+                                        <option value="Initiated">Initiated</option>
+                                        <option value="Connected">Connected</option>
+                                        <option value="Disconnected">Disconnected</option>
+                                    </select>
+                                    <span asp-validation-for="Status" class="text-danger"></span>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label asp-for="IPVersion" class="form-label"></label>
+                                    <select asp-for="IPVersion" class="form-select">
+                                        <option value="">Select IP Version</option>
+                                        <option value="IPv4">IPv4</option>
+                                        <option value="IPv6">IPv6</option>
+                                    </select>
+                                    <span asp-validation-for="IPVersion" class="text-danger"></span>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label asp-for="IPAddress" class="form-label"></label>
+                                    <input asp-for="IPAddress" class="form-control" />
+                                    <span asp-validation-for="IPAddress" class="text-danger"></span>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label asp-for="Port" class="form-label"></label>
+                                    <input asp-for="Port" class="form-control" />
+                                    <span asp-validation-for="Port" class="text-danger"></span>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label asp-for="SubnetMask" class="form-label"></label>
+                                    <input asp-for="SubnetMask" class="form-control" />
+                                    <span asp-validation-for="SubnetMask" class="text-danger"></span>
+                                </div>
+                            </div>
+
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label asp-for="Gateway" class="form-label"></label>
+                                    <input asp-for="Gateway" class="form-control" />
+                                    <span asp-validation-for="Gateway" class="text-danger"></span>
+                                </div>
+                                <div class="mb-3">
+                                    <label asp-for="MacAddress" class="form-label"></label>
+                                    <input asp-for="MacAddress" class="form-control" />
+                                    <span asp-validation-for="MacAddress" class="text-danger"></span>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label asp-for="DeviceType" class="form-label"></label>
+                                    <input asp-for="DeviceType" class="form-control" />
+                                    <span asp-validation-for="DeviceType" class="text-danger"></span>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label asp-for="DetailType" class="form-label"></label>
+                                    <input asp-for="DetailType" class="form-control" />
+                                    <span asp-validation-for="DetailType" class="text-danger"></span>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label asp-for="HttpPort" class="form-label"></label>
+                                    <input asp-for="HttpPort" class="form-control" />
+                                    <span asp-validation-for="HttpPort" class="text-danger"></span>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label asp-for="UserName" class="form-label"></label>
+                                    <input asp-for="UserName" class="form-control" />
+                                    <span asp-validation-for="UserName" class="text-danger"></span>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label asp-for="Password" class="form-label"></label>
+                                    <input asp-for="Password" type="password" class="form-control" placeholder="Leave blank to keep current password" />
+                                    <span asp-validation-for="Password" class="text-danger"></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                            <button type="submit" class="btn btn-primary">Update Device</button>
+                            <a asp-action="Index" class="btn btn-secondary">Cancel</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+}

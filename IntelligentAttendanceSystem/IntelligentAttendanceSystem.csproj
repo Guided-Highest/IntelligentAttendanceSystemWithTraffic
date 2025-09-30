@@ -16,7 +16,14 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Folder Include="Dependicies\" />
     <Folder Include="wwwroot\images\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Reference Include="NetSDKCS">
+      <HintPath>Dependicies\NetSDKCS.dll</HintPath>
+    </Reference>
   </ItemGroup>
 
 </Project>
