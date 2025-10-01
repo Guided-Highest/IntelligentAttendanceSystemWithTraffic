@@ -16,17 +16,23 @@ namespace IntelligentAttendanceSystem.Controllers
         private readonly IAttendanceService _attendanceService;
         private readonly ApplicationDbContext _context;
         private readonly ILogger<AttendanceController> _logger;
+        private readonly IDahuaDeviceService _deviceService;
 
-        public AttendanceController(IAttendanceService attendanceService, ApplicationDbContext context, ILogger<AttendanceController> logger)
+        public AttendanceController(IAttendanceService attendanceService, ApplicationDbContext context, ILogger<AttendanceController> logger, IDahuaDeviceService deviceService)
         {
             _attendanceService = attendanceService;
             _context = context;
             _logger = logger;
+            _deviceService = deviceService;
         }
 
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> Index(AttendanceFilterViewModel filter)
         {
+            if (!_deviceService.IsDeviceConnected)
+            {
+                return RedirectToAction("DeviceDisconnected", "Device");
+            }
             filter.FromDate ??= DateTime.Today.AddDays(-30);
             filter.ToDate ??= DateTime.Today;
 

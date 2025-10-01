@@ -1,0 +1,35 @@
+﻿@{
+    ViewData["Title"] = "No Device Found";
+    Layout = "_Layout"; // Use your layout file
+}
+
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow">
+                <div class="card-header bg-warning text-white">
+                    <h4 class="mb-0"><i class="fas fa-exclamation-triangle"></i> No Device Configuration Found</h4>
+                </div>
+                <div class="card-body text-center py-5">
+                    <div class="mb-4">
+                        <i class="fas fa-desktop fa-5x text-warning"></i>
+                    </div>
+                    <h3 class="text-muted mb-3">No Device Configuration Found</h3>
+                    <p class="text-muted mb-4">No device credentials were found in the database. Please configure your Dahua device to continue using the application.</p>
+
+                    <div class="row mb-4">
+                        <div class="col-md-8 offset-md-2">
+                            <div class="alert alert-info">
+                                <strong>Information:</strong> You need to add your Dahua device credentials including IP address, port, username, and password.
+                            </div>
+                        </div>
+                    </div>
+
+                    <a href="@Url.Action("AddDevice")" class="btn btn-primary btn-lg">
+                        <i class="fas fa-plus-circle"></i> Add Device Configuration
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

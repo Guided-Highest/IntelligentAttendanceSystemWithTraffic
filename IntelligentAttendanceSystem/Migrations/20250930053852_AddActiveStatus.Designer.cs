@@ -4,6 +4,7 @@ using IntelligentAttendanceSystem.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace IntelligentAttendanceSystem.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250930053852_AddActiveStatus")]
+    partial class AddActiveStatus
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -197,156 +200,6 @@ namespace IntelligentAttendanceSystem.Migrations
                     b.ToTable("Attendances");
                 });
 
-            modelBuilder.Entity("IntelligentAttendanceSystem.Models.FaceRecognitionModels+FaceAttendanceRecord", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("CandidateImageBase64")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<DateTime>("CreatedDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("Department")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(450)");
-
-                    b.Property<string>("EventId")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(450)");
-
-                    b.Property<DateTime>("EventTime")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("EventType")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("FaceImageBase64")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<int>("Gender")
-                        .HasColumnType("int");
-
-                    b.Property<string>("GlobalImageBase64")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("Position")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<float>("Similarity")
-                        .HasColumnType("real");
-
-                    b.Property<string>("UserId")
-                        .HasColumnType("nvarchar(450)");
-
-                    b.Property<int?>("UserId1")
-                        .HasColumnType("int");
-
-                    b.Property<string>("UserName")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("Department");
-
-                    b.HasIndex("EventId")
-                        .IsUnique();
-
-                    b.HasIndex("EventTime");
-
-                    b.HasIndex("UserId");
-
-                    b.HasIndex("UserId1");
-
-                    b.ToTable("FaceAttendanceRecords");
-                });
-
-            modelBuilder.Entity("IntelligentAttendanceSystem.Models.FaceUser", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<DateTime?>("BirthDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<DateTime>("CreatedDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("CredentialNumber")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<int>("CredentialType")
-                        .HasColumnType("int");
-
-                    b.Property<string>("Department")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(450)");
-
-                    b.Property<string>("DeviceGroupId")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("DeviceGroupName")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("FaceImageBase64")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<int>("Gender")
-                        .HasColumnType("int");
-
-                    b.Property<bool>("IsActive")
-                        .HasColumnType("bit");
-
-                    b.Property<DateTime?>("LastUpdated")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(450)");
-
-                    b.Property<string>("Position")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("Region")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("UserId")
-                        .HasColumnType("nvarchar(450)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("Department");
-
-                    b.HasIndex("IsActive");
-
-                    b.HasIndex("Name");
-
-                    b.HasIndex("UserId")
-                        .IsUnique()
-                        .HasFilter("[UserId] IS NOT NULL");
-
-                    b.ToTable("FaceUsers");
-                });
-
             modelBuilder.Entity("IntelligentAttendanceSystem.Models.Shift", b =>
                 {
                     b.Property<int>("ShiftId")
@@ -395,7 +248,7 @@ namespace IntelligentAttendanceSystem.Migrations
                         new
                         {
                             ShiftId = 1,
-                            CreatedDate = new DateTime(2025, 10, 1, 14, 48, 7, 957, DateTimeKind.Utc).AddTicks(9875),
+                            CreatedDate = new DateTime(2025, 9, 30, 5, 38, 46, 932, DateTimeKind.Utc).AddTicks(8895),
                             Description = "Standard morning shift",
                             IsActive = true,
                             OffTime = new TimeSpan(0, 17, 0, 0, 0),
@@ -407,7 +260,7 @@ namespace IntelligentAttendanceSystem.Migrations
                         new
                         {
                             ShiftId = 2,
-                            CreatedDate = new DateTime(2025, 10, 1, 14, 48, 7, 957, DateTimeKind.Utc).AddTicks(9878),
+                            CreatedDate = new DateTime(2025, 9, 30, 5, 38, 46, 932, DateTimeKind.Utc).AddTicks(8899),
                             Description = "Evening shift",
                             IsActive = true,
                             OffTime = new TimeSpan(0, 22, 0, 0, 0),
@@ -419,7 +272,7 @@ namespace IntelligentAttendanceSystem.Migrations
                         new
                         {
                             ShiftId = 3,
-                            CreatedDate = new DateTime(2025, 10, 1, 14, 48, 7, 957, DateTimeKind.Utc).AddTicks(9881),
+                            CreatedDate = new DateTime(2025, 9, 30, 5, 38, 46, 932, DateTimeKind.Utc).AddTicks(8900),
                             Description = "Night shift",
                             IsActive = true,
                             OffTime = new TimeSpan(0, 6, 0, 0, 0),
@@ -682,15 +535,6 @@ namespace IntelligentAttendanceSystem.Migrations
                     b.Navigation("User");
                 });
 
-            modelBuilder.Entity("IntelligentAttendanceSystem.Models.FaceRecognitionModels+FaceAttendanceRecord", b =>
-                {
-                    b.HasOne("IntelligentAttendanceSystem.Models.FaceUser", "User")
-                        .WithMany("AttendanceRecords")
-                        .HasForeignKey("UserId1");
-
-                    b.Navigation("User");
-                });
-
             modelBuilder.Entity("IntelligentAttendanceSystem.Models.UserShift", b =>
                 {
                     b.HasOne("IntelligentAttendanceSystem.Models.Shift", "Shift")
@@ -766,11 +610,6 @@ namespace IntelligentAttendanceSystem.Migrations
                     b.Navigation("Attendances");
 
                     b.Navigation("UserShifts");
-                });
-
-            modelBuilder.Entity("IntelligentAttendanceSystem.Models.FaceUser", b =>
-                {
-                    b.Navigation("AttendanceRecords");
                 });
 
             modelBuilder.Entity("IntelligentAttendanceSystem.Models.Shift", b =>

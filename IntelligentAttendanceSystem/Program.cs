@@ -1,5 +1,8 @@
+using IntelligentAttendanceSystem;
 using IntelligentAttendanceSystem.Data;
+using IntelligentAttendanceSystem.Hub;
 using IntelligentAttendanceSystem.Interface;
+using IntelligentAttendanceSystem.Middlewares;
 using IntelligentAttendanceSystem.Models;
 using IntelligentAttendanceSystem.Services;
 using Microsoft.AspNetCore.Identity;
@@ -25,8 +28,21 @@ builder.Services.AddIdentity<ApplicationUser, IdentityRole>(options =>
 builder.Services.AddScoped<IAttendanceService, AttendanceService>();
 builder.Services.AddScoped<IShiftService, ShiftService>();
 builder.Services.AddScoped<IDahuaService_One, DahuaService_One>();
+builder.Services.AddScoped<IFaceManagementService, FaceManagementService>();
+builder.Services.AddScoped<IReportingService, ReportingService>();
+builder.Services.AddSingleton<IDahuaDeviceService, DahuaDeviceService>();
+// Add to your service registration in Program.cs
+builder.Services.AddSingleton<IFaceRecognitionService, FaceRecognitionService>();
 // Add services to the container.
 builder.Services.AddControllersWithViews();
+builder.Services.AddSession();
+builder.Services.AddSignalR(hubOptions =>
+{
+    hubOptions.EnableDetailedErrors = true;
+    hubOptions.KeepAliveInterval = TimeSpan.FromSeconds(10);
+    hubOptions.ClientTimeoutInterval = TimeSpan.FromMinutes(2);
+    hubOptions.HandshakeTimeout = TimeSpan.FromSeconds(15);
+});
 
 var app = builder.Build();
 
@@ -46,6 +62,10 @@ app.UseRouting();
 app.UseAuthentication();
 app.UseAuthorization();
 
+app.UseSession();
+var initializationResult = DeviceInitializer.InitializeDeviceAsync(app).GetAwaiter().GetResult();
+app.UseMiddleware<DeviceInitializationMiddleware>();
+
 app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Home}/{action=Index}/{id?}");
@@ -56,4 +76,11 @@ using (var scope = app.Services.CreateScope())
     var serviceProvider = scope.ServiceProvider;
     await SeedData.Initialize(serviceProvider);
 }
+app.UseEndpoints(endpoints =>
+{
+    endpoints.MapControllerRoute(
+        name: "default",
+        pattern: "{controller=Device}/{action=Initialize}/{id?}");
+    endpoints.MapHub<FaceRecognitionHub>("/faceRecognitionHub");
+});
 app.Run();

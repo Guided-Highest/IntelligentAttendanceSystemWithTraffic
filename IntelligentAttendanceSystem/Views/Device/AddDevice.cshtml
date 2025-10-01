@@ -1,0 +1,171 @@
+﻿@model SystemDevice
+
+@{
+    ViewData["Title"] = "Add Device Configuration";
+    Layout = "_Layout";
+}
+
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0"><i class="fas fa-plus-circle"></i> Add Device Configuration</h4>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            <div class="alert alert-info">
+                                <strong><i class="fas fa-info-circle"></i> Instructions:</strong>
+                                Enter your Dahua device connection details below. Ensure the device is accessible from this network.
+                            </div>
+                        </div>
+                    </div>
+
+                    <form asp-action="AddDevice" method="post" id="deviceForm">
+                        @Html.AntiForgeryToken()
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group mb-3">
+                                    <label asp-for="IPAddress" class="form-label">
+                                        <i class="fas fa-server"></i> Device IP Address *
+                                    </label>
+                                    <input asp-for="IPAddress" class="form-control"
+                                           placeholder="192.168.1.100"
+                                           required />
+                                    <span asp-validation-for="IPAddress" class="text-danger"></span>
+                                    <small class="form-text text-muted">The IP address of your Dahua device</small>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group mb-3">
+                                    <label asp-for="Port" class="form-label">
+                                        <i class="fas fa-plug"></i> Port *
+                                    </label>
+                                    <input asp-for="Port" class="form-control"
+                                           value="@(Model?.Port == 0 ? 37777 : Model?.Port)"
+                                           required />
+                                    <span asp-validation-for="Port" class="text-danger"></span>
+                                    <small class="form-text text-muted">Default Dahua port is 37777</small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group mb-3">
+                                    <label asp-for="UserName" class="form-label">
+                                        <i class="fas fa-user"></i> Username *
+                                    </label>
+                                    <input asp-for="UserName" class="form-control"
+                                           placeholder="admin"
+                                           required />
+                                    <span asp-validation-for="UserName" class="text-danger"></span>
+                                    <small class="form-text text-muted">Device login username</small>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group mb-3">
+                                    <label asp-for="Password" class="form-label">
+                                        <i class="fas fa-lock"></i> Password *
+                                    </label>
+                                    <input asp-for="Password" type="password"
+                                           class="form-control"
+                                           required />
+                                    <span asp-validation-for="Password" class="text-danger"></span>
+                                    <small class="form-text text-muted">Device login password</small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row mt-4">
+                            <div class="col-12">
+                                <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                                    <a href="@Url.Action("Initialize")" class="btn btn-outline-secondary me-md-2">
+                                        <i class="fas fa-arrow-left"></i> Back
+                                    </a>
+                                    <button type="submit" class="btn btn-success btn-lg">
+                                        <i class="fas fa-save"></i> Save and Connect
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Connection Test Card -->
+            <div class="card mt-4">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0"><i class="fas fa-bolt"></i> Test Connection</h5>
+                </div>
+                <div class="card-body">
+                    <p class="card-text">Test the connection before saving to ensure credentials are correct.</p>
+                    <button type="button" class="btn btn-outline-info" onclick="testConnection()">
+                        <i class="fas fa-play-circle"></i> Test Connection
+                    </button>
+                    <div id="testResult" class="mt-3"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function testConnection() {
+            const formData = new FormData(document.getElementById('deviceForm'));
+            const testResult = document.getElementById('testResult');
+
+            testResult.innerHTML = '<div class="alert alert-info"><i class="fas fa-spinner fa-spin"></i> Testing connection...</div>';
+
+            fetch('@Url.Action("TestConnection", "Device")', {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]').value
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    testResult.innerHTML = '<div class="alert alert-success"><i class="fas fa-check-circle"></i> Connection successful! Device is reachable.</div>';
+                } else {
+                    testResult.innerHTML = `<div class="alert alert-danger"><i class="fas fa-times-circle"></i> Connection failed: ${data.message}</div>`;
+                }
+            })
+            .catch(error => {
+                testResult.innerHTML = `<div class="alert alert-danger"><i class="fas fa-times-circle"></i> Error testing connection: ${error}</div>`;
+            });
+        }
+
+        // Form validation
+        document.getElementById('deviceForm').addEventListener('submit', function(e) {
+            const ip = document.querySelector('[name="DeviceIP"]').value;
+            const port = document.querySelector('[name="Port"]').value;
+
+            if (!isValidIP(ip)) {
+                e.preventDefault();
+                alert('Please enter a valid IP address');
+                return false;
+            }
+
+            if (!isValidPort(port)) {
+                e.preventDefault();
+                alert('Please enter a valid port number (1-65535)');
+                return false;
+            }
+        });
+
+        function isValidIP(ip) {
+            const ipRegex = /^(\d{1,3}\.){3}\d{1,3}$/;
+            return ipRegex.test(ip);
+        }
+
+        function isValidPort(port) {
+            const portNum = parseInt(port);
+            return !isNaN(portNum) && portNum > 0 && portNum <= 65535;
+        }
+    </script>
+}

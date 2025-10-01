@@ -9,20 +9,36 @@ namespace IntelligentAttendanceSystem.Controllers
     {
         private readonly IAttendanceService _attendanceService;
         private readonly ILogger<HomeController> _logger;
+        private readonly IDahuaDeviceService _deviceService;
 
-        public HomeController(IAttendanceService attendanceService, ILogger<HomeController> logger)
+        public HomeController(IAttendanceService attendanceService, ILogger<HomeController> logger, IDahuaDeviceService deviceService)
         {
             _attendanceService = attendanceService;
             _logger = logger;
+            _deviceService = deviceService;
         }
 
         public IActionResult Index()
         {
-            if (User.Identity.IsAuthenticated)
+            // If device is already initialized and connected, go to attendance
+            if (_deviceService.IsInitialized && _deviceService.IsDeviceConnected)
             {
-                return RedirectToAction("Dashboard");
+                return RedirectToAction("Index", "FaceRecognition");
             }
-            return View();
+
+            if (User.Identity.IsAuthenticated && User.IsInRole("Admin"))
+            {
+                // Otherwise, go through device initialization flow
+                return RedirectToAction("Initialize", "Device");
+            }
+            else if (User.Identity.IsAuthenticated)
+            {
+                return RedirectToAction("Dashboard", "Home");
+            }
+            else
+            {
+                return RedirectToAction("Login", "Account");
+            }
         }
 
         [Authorize]

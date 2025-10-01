@@ -1,0 +1,600 @@
+﻿@* Views/FaceRecognition/Index.cshtml *@
+@{
+    ViewData["Title"] = "Face Recognition";
+    Layout = "_Layout";
+}
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0"><i class="fas fa-user-circle"></i> Real-time Face Recognition</h4>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <div class="btn-group" role="group">
+                                <button id="startBtn" class="btn btn-success">
+                                    <i class="fas fa-play"></i> Start Recognition
+                                </button>
+                                <button id="stopBtn" class="btn btn-danger" disabled>
+                                    <i class="fas fa-stop"></i> Stop Recognition
+                                </button>
+                            </div>
+                            <div class="mt-2">
+                                <label class="form-label">Channel:</label>
+                                <select id="channelSelect" class="form-select" style="width: auto; display: inline-block;">
+                                    @for (int i = 0; i < Model.chnl; i++)
+                                    {
+                                        <option value="@i">Channel @(i + 1)</option>
+                                    }
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div id="statusPanel" class="alert alert-info">
+                                <i class="fas fa-info-circle"></i> Status: <span id="statusText">Not Started</span>
+                                <br>
+                                <small>Analyzer ID: <span id="analyzerId">-</span></small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <!-- Global Scene Image -->
+                        <div class="col-md-4">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h5 class="card-title mb-0">Global Scene</h5>
+                                </div>
+                                <div class="card-body text-center">
+                                    <img id="globalImage" src="" style="max-width: 100%; max-height: 300px; display: none;"
+                                         class="img-fluid border" alt="Global Scene" />
+                                    <div id="noGlobalImage" class="text-muted">
+                                        No image available
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Detected Face Image -->
+                        <div class="col-md-4">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h5 class="card-title mb-0">Detected Face</h5>
+                                </div>
+                                <div class="card-body text-center">
+                                    <img id="faceImage" src="" style="max-width: 100%; max-height: 300px; display: none;"
+                                         class="img-fluid border" alt="Detected Face" />
+                                    <div id="noFaceImage" class="text-muted">
+                                        No face detected
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Candidate Face Image -->
+                        <div class="col-md-4">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h5 class="card-title mb-0">Matched Candidate</h5>
+                                </div>
+                                <div class="card-body text-center">
+                                    <img id="candidateImage" src="" style="max-width: 100%; max-height: 300px; display: none;"
+                                         class="img-fluid border" alt="Candidate Face" />
+                                    <div id="noCandidateImage" class="text-muted">
+                                        No match found
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Face Attributes -->
+                    <div class="row mt-4">
+                        <div class="col-md-6">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h5 class="card-title mb-0">Face Attributes</h5>
+                                </div>
+                                <div class="card-body">
+                                    <table class="table table-sm" id="faceAttributesTable">
+                                        <tr><td>Sex:</td><td id="faceSex">-</td></tr>
+                                        <tr><td>Age:</td><td id="faceAge">-</td></tr>
+                                        <tr><td>Skin Color:</td><td id="faceSkinColor">-</td></tr>
+                                        <tr><td>Eye State:</td><td id="faceEye">-</td></tr>
+                                        <tr><td>Mouth State:</td><td id="faceMouth">-</td></tr>
+                                        <tr><td>Mask State:</td><td id="faceMask">-</td></tr>
+                                        <tr><td>Beard State:</td><td id="faceBeard">-</td></tr>
+                                        <tr><td>Face Quality:</td><td id="faceQuality">-</td></tr>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Candidate Information -->
+                        <div class="col-md-6">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h5 class="card-title mb-0">Candidate Information</h5>
+                                </div>
+                                <div class="card-body">
+                                    <table class="table table-sm" id="candidateInfoTable">
+                                        <tr><td>Name:</td><td id="candidateName">-</td></tr>
+                                        <tr><td>ID:</td><td id="candidateId">-</td></tr>
+                                        <tr><td>Sex:</td><td id="candidateSex">-</td></tr>
+                                        <tr><td>Birthday:</td><td id="candidateBirthday">-</td></tr>
+                                        <tr><td>Similarity:</td><td id="candidateSimilarity">-</td></tr>
+                                        <tr><td>Group ID:</td><td id="candidateGroupId">-</td></tr>
+                                        <tr><td>Group Name:</td><td id="candidateGroupName">-</td></tr>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Event Log -->
+                    <div class="row mt-4">
+                        <div class="col-12">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h5 class="card-title mb-0">Event Log</h5>
+                                </div>
+                                <div class="card-body">
+                                    <div id="eventLog" style="max-height: 200px; overflow-y: auto;">
+                                        <div class="text-muted">No events yet...</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/7.0.10/signalr.min.js"></script>
+    <script>
+        let isRunning = false;
+         let statusCheckInterval;
+         let connection;
+         let reconnectAttempts = 0;
+         const maxReconnectAttempts = 5;
+         let isManuallyDisconnected = false;
+
+         // Initialize SignalR connection
+        async function initializeSignalR() {
+            if (isManuallyDisconnected) return;
+
+            try {
+                connection = new signalR.HubConnectionBuilder()
+                    .withUrl("/faceRecognitionHub")
+                    .withAutomaticReconnect({
+                        nextRetryDelayInMilliseconds: retryContext => {
+                            // Exponential backoff: 1s, 2s, 5s, 10s, 30s then stop
+                            if (retryContext.previousRetryCount >= maxReconnectAttempts) {
+                                return null; // Stop retrying
+                            }
+                            return [1000, 2000, 5000, 10000, 30000][retryContext.previousRetryCount];
+                        }
+                    })
+                    .configureLogging(signalR.LogLevel.Warning)
+                    .build();
+
+                // Connection event handlers
+                connection.on("ConnectionStatus", (status) => {
+                    console.log('Connection status:', status);
+                    addEventLog(status.Message, 'success');
+                    updateConnectionStatus(true);
+                });
+
+                connection.on("FaceRecognitionEvent", (faceEvent) => {
+                    updateFaceRecognitionUI(faceEvent);
+                    addEventLog(`Face recognized: ${faceEvent.candidateInfo?.name || 'Unknown'} (${faceEvent.similarity}% similarity)`);
+                });
+
+                connection.on("FaceDetectionEvent", (faceEvent) => {
+                    updateFaceDetectionUI(faceEvent);
+                    addEventLog(`Face detected: ${faceEvent.faceAttributes.sex}, ${faceEvent.faceAttributes.age} years`);
+                });
+
+                connection.on("AttendanceLogged", (attendance) => {
+                    addEventLog(`✅ Attendance logged: ${attendance.userName} (${attendance.similarity}%)`, 'success');
+                });
+
+                connection.on("HealthCheck", (healthInfo) => {
+                    updateHealthStatus(healthInfo);
+                });
+
+                connection.onreconnecting((error) => {
+                    addEventLog('Connection lost. Reconnecting...', 'warning');
+                    updateConnectionStatus(false);
+                    console.log('SignalR reconnecting due to:', error);
+                });
+
+                connection.onreconnected((connectionId) => {
+                    addEventLog('Connection restored', 'success');
+                    updateConnectionStatus(true);
+                    reconnectAttempts = 0;
+                    // Rejoin group after reconnection
+                    connection.invoke("JoinFaceRecognitionGroup").catch(err => {
+                        console.error('Failed to rejoin group:', err);
+                    });
+                });
+
+                connection.onclose((error) => {
+                    addEventLog('Connection closed', 'danger');
+                    updateConnectionStatus(false);
+
+                    if (!isManuallyDisconnected && reconnectAttempts < maxReconnectAttempts) {
+                        reconnectAttempts++;
+                        const delay = Math.min(1000 * Math.pow(2, reconnectAttempts), 30000);
+                        addEventLog(`Attempting to reconnect in ${delay/1000}s... (${reconnectAttempts}/${maxReconnectAttempts})`, 'warning');
+
+                        setTimeout(() => {
+                            initializeSignalR();
+                        }, delay);
+                    } else if (!isManuallyDisconnected) {
+                        addEventLog('Max reconnection attempts reached. Please refresh the page.', 'danger');
+                    }
+                });
+
+                await connection.start();
+                await connection.invoke("JoinFaceRecognitionGroup");
+
+                // Test the connection
+                const pingResult = await connection.invoke("Ping");
+                console.log('Ping test:', pingResult);
+
+                reconnectAttempts = 0;
+
+            } catch (err) {
+                console.error('SignalR connection error:', err);
+                addEventLog('Failed to establish real-time connection', 'danger');
+
+                if (!isManuallyDisconnected && reconnectAttempts < maxReconnectAttempts) {
+                    reconnectAttempts++;
+                    const delay = Math.min(1000 * Math.pow(2, reconnectAttempts), 30000);
+                    setTimeout(() => initializeSignalR(), delay);
+                }
+            }
+        }
+
+         function updateConnectionStatus(connected) {
+            const statusElement = document.getElementById('connectionStatus');
+            if (statusElement) {
+                if (connected) {
+                    statusElement.innerHTML = '<i class="fas fa-circle text-success"></i> Connected';
+                    statusElement.className = 'text-success';
+                } else {
+                    statusElement.innerHTML = '<i class="fas fa-circle text-danger"></i> Disconnected';
+                    statusElement.className = 'text-danger';
+                }
+            }
+        }
+
+        function updateHealthStatus(healthInfo) {
+            // Update health information in UI if needed
+            console.log('Health check:', healthInfo);
+        }
+
+        // Manual connection control
+        function disconnectSignalR() {
+            isManuallyDisconnected = true;
+            if (connection) {
+                connection.stop().then(() => {
+                    addEventLog('Manually disconnected from real-time updates', 'info');
+                    updateConnectionStatus(false);
+                });
+            }
+        }
+
+        function reconnectSignalR() {
+            isManuallyDisconnected = false;
+            reconnectAttempts = 0;
+            initializeSignalR();
+        }
+
+        // Add connection controls to your HTML
+        function addConnectionControls() {
+            const controls = `
+                <div class="row mb-3">
+                    <div class="col-12">
+                        <div class="card">
+                            <div class="card-body py-2">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <span id="connectionStatus" class="text-success">
+                                            <i class="fas fa-circle"></i> Connected
+                                        </span>
+                                        <small class="text-muted ms-2" id="connectionDetails">
+                                            Real-time updates active
+                                        </small>
+                                    </div>
+                                    <div>
+                                        <button id="reconnectBtn" class="btn btn-sm btn-outline-primary me-2" onclick="reconnectSignalR()">
+                                            <i class="fas fa-sync-alt"></i> Reconnect
+                                        </button>
+                                        <button id="disconnectBtn" class="btn btn-sm btn-outline-secondary" onclick="disconnectSignalR()">
+                                            <i class="fas fa-plug"></i> Disconnect
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            const cardHeader = document.querySelector('.card-header');
+            cardHeader.insertAdjacentHTML('afterend', controls);
+        }
+
+
+         // Update UI for face recognition events
+         function updateFaceRecognitionUI(faceEvent) {
+             // Update images
+             updateImage('globalImage', 'noGlobalImage', faceEvent.globalImageBase64);
+             updateImage('faceImage', 'noFaceImage', faceEvent.faceImageBase64);
+             updateImage('candidateImage', 'noCandidateImage', faceEvent.candidateImageBase64);
+
+             // Update face attributes
+             if (faceEvent.faceAttributes) {
+                 document.getElementById('faceSex').textContent = faceEvent.faceAttributes.sex || '-';
+                 document.getElementById('faceAge').textContent = faceEvent.faceAttributes.age || '-';
+                 document.getElementById('faceSkinColor').textContent = faceEvent.faceAttributes.skinColor || '-';
+                 document.getElementById('faceEye').textContent = faceEvent.faceAttributes.eyeState || '-';
+                 document.getElementById('faceMouth').textContent = faceEvent.faceAttributes.mouthState || '-';
+                 document.getElementById('faceMask').textContent = faceEvent.faceAttributes.maskState || '-';
+                 document.getElementById('faceBeard').textContent = faceEvent.faceAttributes.beardState || '-';
+                 document.getElementById('faceQuality').textContent = faceEvent.faceAttributes.faceQuality || '-';
+             }
+
+             // Update candidate info
+             if (faceEvent.candidateInfo) {
+                 document.getElementById('candidateName').textContent = faceEvent.candidateInfo.name || '-';
+                 document.getElementById('candidateId').textContent = faceEvent.candidateInfo.id || '-';
+                 document.getElementById('candidateSex').textContent = faceEvent.candidateInfo.sex || '-';
+                 document.getElementById('candidateBirthday').textContent = faceEvent.candidateInfo.birthday || '-';
+                 document.getElementById('candidateSimilarity').textContent = faceEvent.similarity ? faceEvent.similarity + '%' : '-';
+                 document.getElementById('candidateGroupId').textContent = faceEvent.candidateInfo.groupId || '-';
+                 document.getElementById('candidateGroupName').textContent = faceEvent.candidateInfo.groupName || '-';
+             } else {
+                 document.getElementById('candidateName').textContent = 'Unknown';
+                 document.getElementById('candidateId').textContent = '-';
+                 document.getElementById('candidateSex').textContent = '-';
+                 document.getElementById('candidateBirthday').textContent = '-';
+                 document.getElementById('candidateSimilarity').textContent = 'Stranger';
+                 document.getElementById('candidateGroupId').textContent = '-';
+                 document.getElementById('candidateGroupName').textContent = '-';
+             }
+         }
+
+         // Update UI for face detection events
+         function updateFaceDetectionUI(faceEvent) {
+             updateImage('globalImage', 'noGlobalImage', faceEvent.globalImageBase64);
+             updateImage('faceImage', 'noFaceImage', null); // Clear face image for detection events
+             updateImage('candidateImage', 'noCandidateImage', null); // Clear candidate image
+
+             if (faceEvent.faceAttributes) {
+                 document.getElementById('faceSex').textContent = faceEvent.faceAttributes.sex || '-';
+                 document.getElementById('faceAge').textContent = faceEvent.faceAttributes.age || '-';
+                 document.getElementById('faceSkinColor').textContent = faceEvent.faceAttributes.skinColor || '-';
+                 document.getElementById('faceEye').textContent = faceEvent.faceAttributes.eyeState || '-';
+                 document.getElementById('faceMouth').textContent = faceEvent.faceAttributes.mouthState || '-';
+                 document.getElementById('faceMask').textContent = faceEvent.faceAttributes.maskState || '-';
+                 document.getElementById('faceBeard').textContent = faceEvent.faceAttributes.beardState || '-';
+                 document.getElementById('faceQuality').textContent = faceEvent.faceAttributes.faceQuality || '-';
+             }
+
+             // Clear candidate info for detection events
+             document.getElementById('candidateName').textContent = 'Unknown';
+             document.getElementById('candidateId').textContent = '-';
+             document.getElementById('candidateSex').textContent = '-';
+             document.getElementById('candidateBirthday').textContent = '-';
+             document.getElementById('candidateSimilarity').textContent = 'Detection Only';
+             document.getElementById('candidateGroupId').textContent = '-';
+             document.getElementById('candidateGroupName').textContent = '-';
+         }
+
+         function updateImage(imgElementId, noImgElementId, base64Data) {
+             const imgElement = document.getElementById(imgElementId);
+             const noImgElement = document.getElementById(noImgElementId);
+
+             if (base64Data) {
+                 imgElement.src = 'data:image/jpeg;base64,' + base64Data;
+                 imgElement.style.display = 'block';
+                 noImgElement.style.display = 'none';
+             } else {
+                 imgElement.style.display = 'none';
+                 noImgElement.style.display = 'block';
+             }
+         }
+
+        // Elements
+        const startBtn = document.getElementById('startBtn');
+        const stopBtn = document.getElementById('stopBtn');
+        const channelSelect = document.getElementById('channelSelect');
+        const statusText = document.getElementById('statusText');
+        const analyzerId = document.getElementById('analyzerId');
+
+        // Image elements
+        const globalImage = document.getElementById('globalImage');
+        const faceImage = document.getElementById('faceImage');
+        const candidateImage = document.getElementById('candidateImage');
+        const noGlobalImage = document.getElementById('noGlobalImage');
+        const noFaceImage = document.getElementById('noFaceImage');
+        const noCandidateImage = document.getElementById('noCandidateImage');
+        // Start face recognition
+        startBtn.addEventListener('click', async () => {
+            const channel = parseInt(channelSelect.value);
+
+            try {
+                const response = await fetch('/FaceRecognition/StartRecognition', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ channel: channel })
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    setRunningState(true);
+                    startStatusChecking();
+                    addEventLog('Face recognition started on channel ' + channel);
+                } else {
+                    alert('Error: ' + result.message);
+                }
+            } catch (error) {
+                console.error('Error starting recognition:', error);
+                alert('Error starting face recognition');
+            }
+        });
+
+        @if (Model.IsFRS.ToString().ToLower() == "true".ToLower())
+        {
+                <text>
+                    startBtn?.click();
+                </text>
+        }
+            // Stop face recognition
+            stopBtn.addEventListener('click', async () => {
+                try {
+                    const response = await fetch('/FaceRecognition/StopRecognition', {
+                        method: 'POST'
+                    });
+
+                    const result = await response.json();
+
+                    if (result.success) {
+                        setRunningState(false);
+                        stopStatusChecking();
+                        addEventLog('Face recognition stopped');
+                    } else {
+                        alert('Error: ' + result.message);
+                    }
+                } catch (error) {
+                    console.error('Error stopping recognition:', error);
+                    alert('Error stopping face recognition');
+                }
+            });
+
+            // Set running state UI
+            function setRunningState(running) {
+                isRunning = running;
+                startBtn.disabled = running;
+                stopBtn.disabled = !running;
+                channelSelect.disabled = running;
+
+                if (running) {
+                    statusText.textContent = 'Running';
+                    statusText.className = 'text-success';
+                } else {
+                    statusText.textContent = 'Stopped';
+                    statusText.className = 'text-danger';
+                    clearImages();
+                    clearData();
+                }
+            }
+
+            // Clear images
+            function clearImages() {
+                globalImage.style.display = 'none';
+                faceImage.style.display = 'none';
+                candidateImage.style.display = 'none';
+                noGlobalImage.style.display = 'block';
+                noFaceImage.style.display = 'block';
+                noCandidateImage.style.display = 'block';
+            }
+
+            // Clear data tables
+            function clearData() {
+                document.getElementById('faceSex').textContent = '-';
+                document.getElementById('faceAge').textContent = '-';
+                document.getElementById('faceSkinColor').textContent = '-';
+                document.getElementById('faceEye').textContent = '-';
+                document.getElementById('faceMouth').textContent = '-';
+                document.getElementById('faceMask').textContent = '-';
+                document.getElementById('faceBeard').textContent = '-';
+                document.getElementById('faceQuality').textContent = '-';
+
+                document.getElementById('candidateName').textContent = '-';
+                document.getElementById('candidateId').textContent = '-';
+                document.getElementById('candidateSex').textContent = '-';
+                document.getElementById('candidateBirthday').textContent = '-';
+                document.getElementById('candidateSimilarity').textContent = '-';
+                document.getElementById('candidateGroupId').textContent = '-';
+                document.getElementById('candidateGroupName').textContent = '-';
+            }
+
+            // Status checking
+            function startStatusChecking() {
+                statusCheckInterval = setInterval(checkStatus, 2000);
+            }
+
+            function stopStatusChecking() {
+                if (statusCheckInterval) {
+                    clearInterval(statusCheckInterval);
+                }
+            }
+
+            async function checkStatus() {
+                try {
+                    const response = await fetch('/FaceRecognition/GetStatus');
+                    const status = await response.json();
+
+                    analyzerId.textContent = status.analyzerID || '-';
+
+                    // Here you would typically set up SignalR for real-time events
+                    // For now, we'll just update status
+                } catch (error) {
+                    console.error('Error checking status:', error);
+                }
+            }
+
+            // Event logging with types
+             function addEventLog(message, type = 'info') {
+                 const eventLog = document.getElementById('eventLog');
+                 const timestamp = new Date().toLocaleTimeString();
+                 const logEntry = document.createElement('div');
+
+                 let bgClass = '';
+                 switch (type) {
+                     case 'success': bgClass = 'text-success'; break;
+                     case 'warning': bgClass = 'text-warning'; break;
+                     case 'danger': bgClass = 'text-danger'; break;
+                     default: bgClass = 'text-muted';
+                 }
+
+                 logEntry.innerHTML = `<small class="${bgClass}">[${timestamp}] ${message}</small>`;
+
+                 if (eventLog.firstChild && eventLog.firstChild.className === 'text-muted') {
+                     eventLog.innerHTML = '';
+                 }
+
+                 eventLog.appendChild(logEntry);
+                 eventLog.scrollTop = eventLog.scrollHeight;
+             }
+
+             // Initialize when page loads
+             document.addEventListener('DOMContentLoaded', async function() {
+                addConnectionControls();
+                await initializeSignalR();
+                clearImages();
+                clearData();
+
+                // Add cleanup when leaving page
+                window.addEventListener('beforeunload', () => {
+                    isManuallyDisconnected = true;
+                    if (connection) {
+                        connection.stop();
+                    }
+                });
+             });
+        </script>
+}

@@ -1,0 +1,69 @@
+﻿@model DeviceStatusViewModel
+
+<div class="container">
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header">
+                    <h4>Device Connection Status</h4>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <table class="table table-bordered">
+                                <tr>
+                                    <th>Connection Status:</th>
+                                    <td>
+                                        <span class="@Model.StatusClass">
+                                            <i class="fas @(Model.IsConnected ? "fa-check-circle" : "fa-times-circle")"></i>
+                                            @Model.ConnectionStatus
+                                        </span>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <th>Login ID:</th>
+                                    <td>@Model.LoginIDDisplay</td>
+                                </tr>
+                                <tr>
+                                    <th>Device IP:</th>
+                                    <td>@Model.DeviceIP</td>
+                                </tr>
+                                <tr>
+                                    <th>Last Checked:</th>
+                                    <td>@Model.LastChecked.ToString("yyyy-MM-dd HH:mm:ss")</td>
+                                </tr>
+                            </table>
+                        </div>
+                        <div class="col-md-6">
+                            <h5>Device Information</h5>
+                            @if (Model.IsConnected)
+                            {
+                                <table class="table table-sm">
+                                    <tr>
+                                        <th>Channels:</th>
+                                        <td>@Model.DeviceInfo.nChanNum</td>
+                                    </tr>
+                                    <tr>
+                                        <th>Alarm Inputs:</th>
+                                        <td>@Model.DeviceInfo.nAlarmInPortNum</td>
+                                    </tr>
+                                    <tr>
+                                        <th>Alarm Outputs:</th>
+                                        <td>@Model.DeviceInfo.nAlarmOutPortNum</td>
+                                    </tr>
+                                    <!-- Add more device info properties as needed -->
+                                </table>
+                            }
+                            else
+                            {
+                                <div class="alert alert-warning">
+                                    Device information not available - device is disconnected
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

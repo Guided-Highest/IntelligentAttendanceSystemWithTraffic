@@ -34,6 +34,16 @@
 
                             @if (User.IsInRole("Admin"))
                             {
+                                <li class="nav-item">
+                                    <a class="nav-link" href="@Url.Action("Index", "FaceManagement")">
+                                        <i class="fas fa-users"></i> Face Users
+                                    </a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="nav-link" href="@Url.Action("Index", "Reporting")">
+                                        <i class="fas fa-chart-bar"></i> Reports
+                                    </a>
+                                </li>
                                 <li class="nav-item dropdown">
                                     <a class="nav-link dropdown-toggle" href="#" id="adminDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                                         Admin

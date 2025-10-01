@@ -4,6 +4,7 @@ using IntelligentAttendanceSystem.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace IntelligentAttendanceSystem.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251001122624_FaceTables")]
+    partial class FaceTables
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -231,8 +234,9 @@ namespace IntelligentAttendanceSystem.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<int>("Gender")
-                        .HasColumnType("int");
+                    b.Property<string>("Gender")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("GlobalImageBase64")
                         .IsRequired()
@@ -282,15 +286,12 @@ namespace IntelligentAttendanceSystem.Migrations
                     b.Property<DateTime?>("BirthDate")
                         .HasColumnType("datetime2");
 
-                    b.Property<DateTime>("CreatedDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("CredentialNumber")
+                    b.Property<string>("CardNumber")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<int>("CredentialType")
-                        .HasColumnType("int");
+                    b.Property<DateTime>("CreatedDate")
+                        .HasColumnType("datetime2");
 
                     b.Property<string>("Department")
                         .IsRequired()
@@ -308,8 +309,9 @@ namespace IntelligentAttendanceSystem.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<int>("Gender")
-                        .HasColumnType("int");
+                    b.Property<string>("Gender")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<bool>("IsActive")
                         .HasColumnType("bit");
@@ -322,10 +324,6 @@ namespace IntelligentAttendanceSystem.Migrations
                         .HasColumnType("nvarchar(450)");
 
                     b.Property<string>("Position")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("Region")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
@@ -395,7 +393,7 @@ namespace IntelligentAttendanceSystem.Migrations
                         new
                         {
                             ShiftId = 1,
-                            CreatedDate = new DateTime(2025, 10, 1, 14, 48, 7, 957, DateTimeKind.Utc).AddTicks(9875),
+                            CreatedDate = new DateTime(2025, 10, 1, 12, 26, 23, 971, DateTimeKind.Utc).AddTicks(4239),
                             Description = "Standard morning shift",
                             IsActive = true,
                             OffTime = new TimeSpan(0, 17, 0, 0, 0),
@@ -407,7 +405,7 @@ namespace IntelligentAttendanceSystem.Migrations
                         new
                         {
                             ShiftId = 2,
-                            CreatedDate = new DateTime(2025, 10, 1, 14, 48, 7, 957, DateTimeKind.Utc).AddTicks(9878),
+                            CreatedDate = new DateTime(2025, 10, 1, 12, 26, 23, 971, DateTimeKind.Utc).AddTicks(4241),
                             Description = "Evening shift",
                             IsActive = true,
                             OffTime = new TimeSpan(0, 22, 0, 0, 0),
@@ -419,7 +417,7 @@ namespace IntelligentAttendanceSystem.Migrations
                         new
                         {
                             ShiftId = 3,
-                            CreatedDate = new DateTime(2025, 10, 1, 14, 48, 7, 957, DateTimeKind.Utc).AddTicks(9881),
+                            CreatedDate = new DateTime(2025, 10, 1, 12, 26, 23, 971, DateTimeKind.Utc).AddTicks(4243),
                             Description = "Night shift",
                             IsActive = true,
                             OffTime = new TimeSpan(0, 6, 0, 0, 0),

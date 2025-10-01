@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using System.Collections.Generic;
 using System.Reflection.Emit;
+using static IntelligentAttendanceSystem.Models.FaceRecognitionModels;
 
 namespace IntelligentAttendanceSystem.Data
 {
@@ -17,9 +18,34 @@ namespace IntelligentAttendanceSystem.Data
         public DbSet<Shift> Shifts { get; set; }
         public DbSet<UserShift> UserShifts { get; set; }
         public DbSet<SystemDevice> SystemDevices { get; set; }
+        public DbSet<FaceAttendanceRecord> FaceAttendanceRecords { get; set; }
+        public DbSet<FaceUser> FaceUsers { get; set; }
         protected override void OnModelCreating(ModelBuilder builder)
         {
             base.OnModelCreating(builder);
+            builder.Entity<FaceAttendanceRecord>(entity =>
+            {
+                entity.HasIndex(e => e.EventId).IsUnique();
+                entity.HasIndex(e => e.EventTime);
+                entity.HasIndex(e => e.UserId);
+                entity.HasIndex(e => e.Department);
+
+                // Optional: Configure relationship with FaceUser
+                //entity.HasOne(e => e.User)
+                //      .WithMany(u => u.AttendanceRecords)
+                //      .HasForeignKey(e => e.UserId)
+                //      .HasPrincipalKey(u => u.UserId) // Use UserId as foreign key
+                //      .OnDelete(DeleteBehavior.Restrict); // Or Restrict based on your needs
+            });
+
+            // Configure FaceUser
+            builder.Entity<FaceUser>(entity =>
+            {
+                entity.HasIndex(e => e.UserId).IsUnique();
+                entity.HasIndex(e => e.Name);
+                entity.HasIndex(e => e.Department);
+                entity.HasIndex(e => e.IsActive);
+            });
 
             builder.Entity<SystemDevice>(entity =>
             {

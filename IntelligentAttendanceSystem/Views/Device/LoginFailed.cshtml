@@ -1,0 +1,93 @@
+﻿@{
+    ViewData["Title"] = "Login Failed";
+    Layout = "_Layout";
+
+    var errorMessage = TempData["ErrorMessage"] as string;
+    var initializationError = TempData["InitializationError"] as string;
+}
+
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow">
+                <div class="card-header bg-danger text-white">
+                    <h4 class="mb-0"><i class="fas fa-times-circle"></i> Device Login Failed</h4>
+                </div>
+                <div class="card-body">
+                    <!-- Show specific error message if available -->
+                    @if (!string.IsNullOrEmpty(errorMessage) || !string.IsNullOrEmpty(initializationError))
+                    {
+                        <div class="alert alert-danger">
+                            <h5><i class="fas fa-exclamation-triangle"></i> Error Details:</h5>
+                            <p class="mb-0">@(errorMessage ?? initializationError)</p>
+                        </div>
+                    }
+
+                    <div class="text-center py-4">
+                        <div class="mb-4">
+                            <i class="fas fa-unlink fa-5x text-danger"></i>
+                        </div>
+                        <h3 class="text-muted mb-3">Device Connection Failed</h3>
+                        <p class="text-muted mb-4">Unable to connect to the device. Please check the following:</p>
+                    </div>
+
+                    <div class="row mb-4">
+                        <div class="col-md-8 offset-md-2">
+                            <div class="card">
+                                <div class="card-body">
+                                    <h5 class="card-title">Troubleshooting Steps:</h5>
+                                    <ul class="list-group list-group-flush">
+                                        <li class="list-group-item">
+                                            <i class="fas fa-network-wired text-primary"></i> Verify device network connectivity
+                                        </li>
+                                        <li class="list-group-item">
+                                            <i class="fas fa-server text-primary"></i> Check IP address and port configuration
+                                        </li>
+                                        <li class="list-group-item">
+                                            <i class="fas fa-user text-primary"></i> Confirm username and password are correct
+                                        </li>
+                                        <li class="list-group-item">
+                                            <i class="fas fa-plug text-primary"></i> Ensure device is powered on and connected
+                                        </li>
+                                        <li class="list-group-item">
+                                            <i class="fas fa-shield-alt text-primary"></i> Check firewall and network restrictions
+                                        </li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-center">
+                        <a href="@Url.Action("AddDevice")" class="btn btn-primary btn-lg me-md-3">
+                            <i class="fas fa-edit"></i> Update Device Settings
+                        </a>
+                        <a href="@Url.Action("Initialize")" class="btn btn-outline-secondary btn-lg">
+                            <i class="fas fa-redo"></i> Retry Connection
+                        </a>
+                    </div>
+
+                    <!-- Technical Details (for debugging) -->
+                    @if (User.IsInRole("Administrator"))
+                    {
+                        <div class="mt-4">
+                            <button class="btn btn-sm btn-outline-info" type="button" data-bs-toggle="collapse" data-bs-target="#techDetails">
+                                <i class="fas fa-code"></i> Technical Details
+                            </button>
+                            <div class="collapse mt-2" id="techDetails">
+                                <div class="card card-body">
+                                    <small>
+                                        <strong>Initialization Status:</strong> @(_deviceService.IsInitialized ? "Success" : "Failed")<br>
+                                        <strong>Device Connected:</strong> @(_deviceService.IsDeviceConnected ? "Yes" : "No")<br>
+                                        <strong>Login ID:</strong> @_deviceService.LoginID<br>
+                                        <strong>Last Error:</strong> @(_deviceService.InitializationError ?? "None")
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

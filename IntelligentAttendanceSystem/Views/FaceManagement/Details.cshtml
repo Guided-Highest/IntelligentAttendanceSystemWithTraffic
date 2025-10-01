@@ -1,0 +1,213 @@
+﻿@model FaceUser
+
+@{
+    ViewData["Title"] = "User Details";
+    Layout = "_Layout";
+}
+
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header bg-info text-white d-flex justify-content-between align-items-center">
+                    <h4 class="mb-0"><i class="fas fa-user-circle"></i> User Details</h4>
+                    <div>
+                        <a href="@Url.Action("Edit", new { id = Model.Id })" class="btn btn-warning btn-sm me-2">
+                            <i class="fas fa-edit"></i> Edit
+                        </a>
+                        <a href="@Url.Action("Index")" class="btn btn-secondary btn-sm">
+                            <i class="fas fa-arrow-left"></i> Back
+                        </a>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <!-- User Image -->
+                        <div class="col-md-4 text-center">
+                            @if (!string.IsNullOrEmpty(Model.FaceImageBase64))
+                            {
+                                <img src="data:image/jpeg;base64,@Model.FaceImageBase64"
+                                     class="img-thumbnail rounded-circle mb-3"
+                                     style="width: 200px; height: 200px; object-fit: cover;"
+                                     alt="@Model.Name">
+                            }
+                            else
+                            {
+                                <div class="rounded-circle bg-secondary d-inline-flex align-items-center justify-content-center mb-3"
+                                     style="width: 200px; height: 200px;">
+                                    <i class="fas fa-user fa-5x text-white"></i>
+                                </div>
+                            }
+                            <h4>@Model.Name</h4>
+                            <span class="badge bg-@(Model.IsActive ? "success" : "secondary")">
+                                @(Model.IsActive ? "Active" : "Inactive")
+                            </span>
+                        </div>
+
+                        <!-- User Details -->
+                        <div class="col-md-8">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="detail-item mb-3">
+                                        <label class="form-label text-muted small mb-1">User ID</label>
+                                        <div class="fw-bold font-monospace">@Model.UserId</div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="detail-item mb-3">
+                                        <label class="form-label text-muted small mb-1">Gender</label>
+                                        <div class="fw-bold">@Model.Gender</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="detail-item mb-3">
+                                        <label class="form-label text-muted small mb-1">Birth Date</label>
+                                        <div class="fw-bold">@(Model.BirthDate?.ToString("yyyy-MM-dd") ?? "Not specified")</div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="detail-item mb-3">
+                                        <label class="form-label text-muted small mb-1">Card Number</label>
+                                        <div class="fw-bold">
+                                            @if (!string.IsNullOrEmpty(Model.CredentialNumber))
+                                            {
+                                                <span class="badge bg-info">@Model.CredentialNumber</span>
+                                            }
+                                            else
+                                            {
+                                                <span class="text-muted">No card assigned</span>
+                                            }
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="detail-item mb-3">
+                                        <label class="form-label text-muted small mb-1">Department</label>
+                                        <div class="fw-bold">@(Model.Department ?? "Not specified")</div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="detail-item mb-3">
+                                        <label class="form-label text-muted small mb-1">Position</label>
+                                        <div class="fw-bold">@(Model.Position ?? "Not specified")</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="detail-item mb-3">
+                                        <label class="form-label text-muted small mb-1">Created Date</label>
+                                        <div class="fw-bold">@Model.CreatedDate.ToString("yyyy-MM-dd HH:mm")</div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="detail-item mb-3">
+                                        <label class="form-label text-muted small mb-1">Last Updated</label>
+                                        <div class="fw-bold">@(Model.LastUpdated?.ToString("yyyy-MM-dd HH:mm") ?? "Never")</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            @if (!string.IsNullOrEmpty(Model.DeviceGroupId))
+                            {
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="detail-item mb-3">
+                                            <label class="form-label text-muted small mb-1">Device Group ID</label>
+                                            <div class="fw-bold font-monospace">@Model.DeviceGroupId</div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="detail-item mb-3">
+                                            <label class="form-label text-muted small mb-1">Device Group Name</label>
+                                            <div class="fw-bold">@Model.DeviceGroupName</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    </div>
+
+                    <!-- Recognition Statistics -->
+                    <div class="row mt-4">
+                        <div class="col-12">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h5 class="card-title mb-0">
+                                        <i class="fas fa-chart-bar"></i> Recognition Statistics
+                                    </h5>
+                                </div>
+                                <div class="card-body">
+                                    <div class="row text-center">
+                                        <div class="col-md-3">
+                                            <div class="stat-item">
+                                                <div class="h3 text-primary mb-1" id="totalRecognitions">0</div>
+                                                <div class="text-muted small">Total Recognitions</div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <div class="stat-item">
+                                                <div class="h3 text-success mb-1" id="todayRecognitions">0</div>
+                                                <div class="text-muted small">Today</div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <div class="stat-item">
+                                                <div class="h3 text-info mb-1" id="avgSimilarity">0%</div>
+                                                <div class="text-muted small">Avg. Similarity</div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <div class="stat-item">
+                                                <div class="h3 text-warning mb-1" id="lastRecognition">Never</div>
+                                                <div class="text-muted small">Last Recognition</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        // Load recognition statistics
+        document.addEventListener('DOMContentLoaded', function() {
+            // In a real application, you would fetch this data from an API
+            // For now, we'll simulate with random data
+            setTimeout(() => {
+                document.getElementById('totalRecognitions').textContent = Math.floor(Math.random() * 100);
+                document.getElementById('todayRecognitions').textContent = Math.floor(Math.random() * 10);
+                document.getElementById('avgSimilarity').textContent = (80 + Math.floor(Math.random() * 20)) + '%';
+                document.getElementById('lastRecognition').textContent = 'Today ' + new Date().toLocaleTimeString();
+            }, 1000);
+        });
+    </script>
+
+    <style>
+        .detail-item {
+            padding: 0.5rem 0;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .stat-item {
+            padding: 1rem;
+        }
+
+        .border-dashed {
+            border-style: dashed !important;
+        }
+    </style>
+}
