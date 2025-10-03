@@ -220,7 +220,6 @@ namespace IntelligentAttendanceSystem.Controllers
                 CredentialType = model.CredentialType,
                 CredentialNumber = model.CredentialNumber,
                 Region = model.Region, // This will be the country code like "US"
-                UserType = model.UserType,
                 RollNumber = model.RollNumber,
                 Class = model.Class,
                 EmployeeId = model.EmployeeId,

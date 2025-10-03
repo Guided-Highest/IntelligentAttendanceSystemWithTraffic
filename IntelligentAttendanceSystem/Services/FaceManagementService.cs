@@ -38,7 +38,7 @@ namespace IntelligentAttendanceSystem.Services
         public async Task<FaceUser> GetUserByDeviceIdAsync(string userId)
         {
             return await _context.FaceUsers
-                .FirstOrDefaultAsync(u => u.UserId == userId && u.IsActive);
+                .FirstOrDefaultAsync(u => u.DeviceUserId == userId && u.IsActive);
         }
 
         public async Task<bool> AddUserAsync(FaceUserCreateRequest request)
@@ -60,7 +60,7 @@ namespace IntelligentAttendanceSystem.Services
                 var group = _deviceService.GetDefaultGroupInfo();
                 var faceUser = new FaceUser
                 {
-                    UserId = userId,
+                    DeviceUserId = userId,
                     Name = request.Name,
                     Gender = request.Gender,
                     BirthDate = request.BirthDate,
@@ -125,7 +125,7 @@ namespace IntelligentAttendanceSystem.Services
 
                 // TODO: Update user in device face database
 
-                _logger.LogInformation($"Face user updated: {request.Name} (ID: {user.UserId})");
+                _logger.LogInformation($"Face user updated: {request.Name} (ID: {user.DeviceUserId})");
                 return true;
             }
             catch (Exception ex)
@@ -149,7 +149,7 @@ namespace IntelligentAttendanceSystem.Services
 
                 // TODO: Remove user from device face database
 
-                _logger.LogInformation($"Face user deleted: {user.Name} (ID: {user.UserId})");
+                _logger.LogInformation($"Face user deleted: {user.Name} (ID: {user.DeviceUserId})");
                 return true;
             }
             catch (Exception ex)
@@ -193,7 +193,7 @@ namespace IntelligentAttendanceSystem.Services
             return await _context.FaceUsers
                 .Where(u => u.IsActive &&
                            (u.Name.Contains(searchTerm) ||
-                            u.UserId.Contains(searchTerm) ||
+                            u.DeviceUserId.Contains(searchTerm) ||
                             u.Department.Contains(searchTerm) ||
                             u.Position.Contains(searchTerm) ||
                             u.CredentialNumber.Contains(searchTerm)))

@@ -4,6 +4,7 @@ using IntelligentAttendanceSystem.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace IntelligentAttendanceSystem.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251002163941_RemoveRelationAttendUser")]
+    partial class RemoveRelationAttendUser
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -134,6 +137,9 @@ namespace IntelligentAttendanceSystem.Migrations
                         .HasMaxLength(256)
                         .HasColumnType("nvarchar(256)");
 
+                    b.Property<int>("UserType")
+                        .HasColumnType("int");
+
                     b.HasKey("Id");
 
                     b.HasIndex("NormalizedEmail")
@@ -157,9 +163,6 @@ namespace IntelligentAttendanceSystem.Migrations
                         .HasColumnType("int");
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("AttendanceId"));
-
-                    b.Property<string>("ApplicationUserId")
-                        .HasColumnType("nvarchar(450)");
 
                     b.Property<DateTime>("CheckInTime")
                         .HasColumnType("datetime2");
@@ -188,8 +191,6 @@ namespace IntelligentAttendanceSystem.Migrations
                         .HasColumnType("nvarchar(450)");
 
                     b.HasKey("AttendanceId");
-
-                    b.HasIndex("ApplicationUserId");
 
                     b.HasIndex("ShiftId");
 
@@ -306,10 +307,6 @@ namespace IntelligentAttendanceSystem.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("DeviceUserId")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(450)");
-
                     b.Property<string>("FaceImageBase64")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -335,19 +332,20 @@ namespace IntelligentAttendanceSystem.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<int>("UserType")
-                        .HasColumnType("int");
+                    b.Property<string>("UserId")
+                        .HasColumnType("nvarchar(450)");
 
                     b.HasKey("Id");
 
                     b.HasIndex("Department");
 
-                    b.HasIndex("DeviceUserId")
-                        .IsUnique();
-
                     b.HasIndex("IsActive");
 
                     b.HasIndex("Name");
+
+                    b.HasIndex("UserId")
+                        .IsUnique()
+                        .HasFilter("[UserId] IS NOT NULL");
 
                     b.ToTable("FaceUsers");
                 });
@@ -400,7 +398,7 @@ namespace IntelligentAttendanceSystem.Migrations
                         new
                         {
                             ShiftId = 1,
-                            CreatedDate = new DateTime(2025, 10, 3, 7, 55, 24, 320, DateTimeKind.Utc).AddTicks(3691),
+                            CreatedDate = new DateTime(2025, 10, 2, 16, 39, 35, 380, DateTimeKind.Utc).AddTicks(9300),
                             Description = "Standard morning shift",
                             IsActive = true,
                             OffTime = new TimeSpan(0, 17, 0, 0, 0),
@@ -412,7 +410,7 @@ namespace IntelligentAttendanceSystem.Migrations
                         new
                         {
                             ShiftId = 2,
-                            CreatedDate = new DateTime(2025, 10, 3, 7, 55, 24, 320, DateTimeKind.Utc).AddTicks(3694),
+                            CreatedDate = new DateTime(2025, 10, 2, 16, 39, 35, 380, DateTimeKind.Utc).AddTicks(9303),
                             Description = "Evening shift",
                             IsActive = true,
                             OffTime = new TimeSpan(0, 22, 0, 0, 0),
@@ -424,7 +422,7 @@ namespace IntelligentAttendanceSystem.Migrations
                         new
                         {
                             ShiftId = 3,
-                            CreatedDate = new DateTime(2025, 10, 3, 7, 55, 24, 320, DateTimeKind.Utc).AddTicks(3696),
+                            CreatedDate = new DateTime(2025, 10, 2, 16, 39, 35, 380, DateTimeKind.Utc).AddTicks(9305),
                             Description = "Night shift",
                             IsActive = true,
                             OffTime = new TimeSpan(0, 6, 0, 0, 0),
@@ -674,18 +672,13 @@ namespace IntelligentAttendanceSystem.Migrations
 
             modelBuilder.Entity("IntelligentAttendanceSystem.Models.Attendance", b =>
                 {
-                    b.HasOne("IntelligentAttendanceSystem.Models.ApplicationUser", null)
-                        .WithMany("Attendances")
-                        .HasForeignKey("ApplicationUserId");
-
                     b.HasOne("IntelligentAttendanceSystem.Models.Shift", null)
                         .WithMany("Attendances")
                         .HasForeignKey("ShiftId");
 
-                    b.HasOne("IntelligentAttendanceSystem.Models.FaceUser", "User")
+                    b.HasOne("IntelligentAttendanceSystem.Models.ApplicationUser", "User")
                         .WithMany("Attendances")
                         .HasForeignKey("UserId")
-                        .HasPrincipalKey("DeviceUserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
@@ -781,8 +774,6 @@ namespace IntelligentAttendanceSystem.Migrations
             modelBuilder.Entity("IntelligentAttendanceSystem.Models.FaceUser", b =>
                 {
                     b.Navigation("AttendanceRecords");
-
-                    b.Navigation("Attendances");
                 });
 
             modelBuilder.Entity("IntelligentAttendanceSystem.Models.Shift", b =>

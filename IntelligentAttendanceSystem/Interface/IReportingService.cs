@@ -9,6 +9,6 @@ namespace IntelligentAttendanceSystem.Interface
         Task<MemoryStream> GenerateExcelReportAsync(ReportRequest request);
         Task<MemoryStream> GeneratePdfReportAsync(ReportRequest request);
         Task<List<FaceAttendanceRecord>> GetAttendanceRecordsAsync(ReportRequest request);
-        Task<DashboardStats> GetDashboardStatsAsync();
+        Task<DashboardStats> GetDashboardStatsAsync(CancellationToken cancellationToken );
     }
 }

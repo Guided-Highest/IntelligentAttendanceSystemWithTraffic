@@ -11,8 +11,6 @@ namespace IntelligentAttendanceSystem.Models
         [StringLength(100)]
         public string FullName { get; set; }
 
-        [Required]
-        public UserType UserType { get; set; }
 
         [Required]
         public Gender Gender { get; set; }

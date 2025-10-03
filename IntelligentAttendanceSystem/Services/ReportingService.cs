@@ -31,7 +31,7 @@ namespace IntelligentAttendanceSystem.Services
                     .ToListAsync();
 
                 // If you need user details, you can join with FaceUsers table
-                var users = await _context.FaceUsers.ToDictionaryAsync(u => u.UserId, u => u);
+                var users = await _context.FaceUsers.ToDictionaryAsync(u => u.DeviceUserId, u => u);
 
                 var report = new FaceRecognitionReport
                 {
@@ -204,27 +204,45 @@ namespace IntelligentAttendanceSystem.Services
                 .OrderByDescending(r => r.EventTime)
                 .ToListAsync();
         }
-
-        public async Task<DashboardStats> GetDashboardStatsAsync()
+        public async Task<DashboardStats> GetDashboardStatsAsync(CancellationToken cancellationToken = default)
         {
             var today = DateTime.Today;
-            var recordsToday = await _context.FaceAttendanceRecords
-                .Where(r => r.EventTime >= today && r.EventTime < today.AddDays(1))
-                .ToListAsync();
+            var tomorrow = today.AddDays(1);
+            var weekStart = today.AddDays(-7);
 
-            var recordsThisWeek = await _context.FaceAttendanceRecords
-                .Where(r => r.EventTime >= today.AddDays(-7))
-                .ToListAsync();
-
-            return new DashboardStats
+            try
             {
-                TodayRecognitions = recordsToday.Count(r => r.EventType == "RECOGNITION"),
-                WeekRecognitions = recordsThisWeek.Count(r => r.EventType == "RECOGNITION"),
-                TotalUsers = await _context.FaceUsers.CountAsync(u => u.IsActive),
-                AverageSimilarityToday = recordsToday.Any() ? recordsToday.Average(r => r.Similarity) : 0
-            };
-        }
+                // Run all queries in parallel
+                var todayRecognitionsTask = _context.FaceAttendanceRecords
+                    .CountAsync(r => r.EventTime >= today && r.EventTime < tomorrow && r.EventType == "RECOGNITION", cancellationToken);
 
+                var weekRecognitionsTask = _context.FaceAttendanceRecords
+                    .CountAsync(r => r.EventTime >= weekStart && r.EventType == "RECOGNITION", cancellationToken);
+
+                var totalUsersTask = _context.FaceUsers.CountAsync(u => u.IsActive, cancellationToken);
+
+                var avgSimilarityTask = _context.FaceAttendanceRecords
+                    .Where(r => r.EventTime >= today && r.EventTime < tomorrow && r.EventType == "RECOGNITION")
+                    .AverageAsync(r => (double?)r.Similarity, cancellationToken);
+
+                // Use Task.WhenAll but handle individual exceptions
+                var allTasks = new Task[] { todayRecognitionsTask, weekRecognitionsTask, totalUsersTask, avgSimilarityTask };
+                await Task.WhenAll(allTasks).ConfigureAwait(false);
+
+                return new DashboardStats
+                {
+                    TodayRecognitions = todayRecognitionsTask.Result,
+                    WeekRecognitions = weekRecognitionsTask.Result,
+                    TotalUsers = totalUsersTask.Result,
+                    AverageSimilarityToday = avgSimilarityTask.Result ?? 0
+                };
+            }
+            catch (Exception ex) when (ex is not OperationCanceledException)
+            {
+                _logger.LogError(ex, "Error in GetDashboardStatsAsync");
+                throw; // Re-throw to be handled by controller
+            }
+        }
         public async Task<List<AttendanceWithUserDetails>> GetDetailedAttendanceAsync(ReportRequest request)
         {
             var records = await _context.FaceAttendanceRecords
@@ -232,7 +250,7 @@ namespace IntelligentAttendanceSystem.Services
                 .OrderByDescending(r => r.EventTime)
                 .ToListAsync();
 
-            var users = await _context.FaceUsers.ToDictionaryAsync(u => u.UserId, u => u);
+            var users = await _context.FaceUsers.ToDictionaryAsync(u => u.DeviceUserId, u => u);
 
             var detailedRecords = records.Select(r => new AttendanceWithUserDetails
             {

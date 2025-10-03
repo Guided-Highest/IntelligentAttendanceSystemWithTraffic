@@ -27,9 +27,8 @@ namespace IntelligentAttendanceSystem.Models
 
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
-        // Navigation properties
         [ForeignKey("UserId")]
-        public virtual ApplicationUser User { get; set; }
+        public virtual FaceUser User { get; set; }
     }
 
     public enum AttendanceStatus

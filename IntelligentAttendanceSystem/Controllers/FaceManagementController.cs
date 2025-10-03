@@ -152,7 +152,7 @@ namespace IntelligentAttendanceSystem.Controllers
         public async Task<JsonResult> Search(string term)
         {
             var users = await _faceManagementService.SearchUsersAsync(term);
-            return Json(users.Select(u => new { u.Id, u.Name, u.Department, u.UserId }));
+            return Json(users.Select(u => new { u.Id, u.Name, u.Department, u.DeviceUserId }));
         }
 
         [HttpGet]

@@ -273,6 +273,9 @@ namespace IntelligentAttendanceSystem.Services
 
                     credentials.CreatedDate = DateTime.UtcNow;
                     credentials.IsActive = true;
+                    credentials.DeviceType = "";
+                    credentials.DetailType = "";
+                    credentials.Status = "";
                     context.SystemDevices.Add(credentials);
                     await context.SaveChangesAsync();
                     return true;

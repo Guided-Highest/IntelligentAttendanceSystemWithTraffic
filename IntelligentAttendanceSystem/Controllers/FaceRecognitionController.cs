@@ -1,9 +1,11 @@
 ﻿using IntelligentAttendanceSystem.Interface;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using static IntelligentAttendanceSystem.Models.FaceRecognitionModels;
 
 namespace IntelligentAttendanceSystem.Controllers
 {
+    [AllowAnonymous]
     public class FaceRecognitionController : Controller
     {
         private readonly IFaceRecognitionService _faceRecognitionService;

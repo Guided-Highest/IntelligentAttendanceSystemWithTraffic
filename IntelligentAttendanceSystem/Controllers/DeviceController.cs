@@ -97,7 +97,7 @@ namespace IntelligentAttendanceSystem.Controllers
                     bool loginSuccess = await _deviceService.InitializeAndLoginAsync();
                     if (loginSuccess)
                     {
-                        return RedirectToAction("Index", "Attendance");
+                        return RedirectToAction("Index", "FaceRecognition");
                     }
                     else
                     {

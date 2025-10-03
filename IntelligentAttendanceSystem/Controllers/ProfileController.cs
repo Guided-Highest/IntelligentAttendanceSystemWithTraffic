@@ -38,7 +38,6 @@ namespace IntelligentAttendanceSystem.Controllers
                 CredentialType = user.CredentialType,
                 CredentialNumber = user.CredentialNumber,
                 Region = user.Region,
-                UserType = user.UserType,
                 RollNumber = user.RollNumber,
                 Class = user.Class,
                 EmployeeId = user.EmployeeId,

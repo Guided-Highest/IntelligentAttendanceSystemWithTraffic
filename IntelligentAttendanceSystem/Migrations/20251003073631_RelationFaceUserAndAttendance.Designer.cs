@@ -4,6 +4,7 @@ using IntelligentAttendanceSystem.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace IntelligentAttendanceSystem.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251003073631_RelationFaceUserAndAttendance")]
+    partial class RelationFaceUserAndAttendance
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -400,7 +403,7 @@ namespace IntelligentAttendanceSystem.Migrations
                         new
                         {
                             ShiftId = 1,
-                            CreatedDate = new DateTime(2025, 10, 3, 7, 55, 24, 320, DateTimeKind.Utc).AddTicks(3691),
+                            CreatedDate = new DateTime(2025, 10, 3, 7, 36, 25, 601, DateTimeKind.Utc).AddTicks(3881),
                             Description = "Standard morning shift",
                             IsActive = true,
                             OffTime = new TimeSpan(0, 17, 0, 0, 0),
@@ -412,7 +415,7 @@ namespace IntelligentAttendanceSystem.Migrations
                         new
                         {
                             ShiftId = 2,
-                            CreatedDate = new DateTime(2025, 10, 3, 7, 55, 24, 320, DateTimeKind.Utc).AddTicks(3694),
+                            CreatedDate = new DateTime(2025, 10, 3, 7, 36, 25, 601, DateTimeKind.Utc).AddTicks(3884),
                             Description = "Evening shift",
                             IsActive = true,
                             OffTime = new TimeSpan(0, 22, 0, 0, 0),
@@ -424,7 +427,7 @@ namespace IntelligentAttendanceSystem.Migrations
                         new
                         {
                             ShiftId = 3,
-                            CreatedDate = new DateTime(2025, 10, 3, 7, 55, 24, 320, DateTimeKind.Utc).AddTicks(3696),
+                            CreatedDate = new DateTime(2025, 10, 3, 7, 36, 25, 601, DateTimeKind.Utc).AddTicks(3886),
                             Description = "Night shift",
                             IsActive = true,
                             OffTime = new TimeSpan(0, 6, 0, 0, 0),

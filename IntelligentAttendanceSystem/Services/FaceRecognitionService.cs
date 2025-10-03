@@ -403,7 +403,7 @@ namespace IntelligentAttendanceSystem.Services
                     attendance.EventTime,
                     Department = user?.Department
                 });
-
+                await context.Database.ExecuteSqlRawAsync("EXEC SyncAllAttendances;");
                 _logger.LogInformation($"Attendance logged for: {faceEvent.CandidateInfo?.Name} (Similarity: {faceEvent.Similarity}%)");
             }
             catch (Exception ex)

@@ -38,7 +38,6 @@ namespace IntelligentAttendanceSystem.Data
                     CredentialType = CredentialType.IDCard,
                     CredentialNumber = "ADMIN001",
                     Region = "PK",
-                    UserType = UserType.Staff,
                     EmployeeId = "ADMIN001",
                     Department = "Administration",
                     IsActive = true,

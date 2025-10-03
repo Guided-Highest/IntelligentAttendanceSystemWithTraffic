@@ -67,7 +67,7 @@
                                 <td>
                                     <strong>@assignment.User?.FullName</strong>
                                     <br />
-                                    <small class="text-muted">@assignment.User?.UserType</small>
+                                    @* <small class="text-muted">@assignment.User?.UserType</small> *@
                                     <br />
                                     <a asp-action="UserShiftHistory" asp-route-userId="@assignment.UserId"
                                        class="badge bg-info bg-sm">View History</a>

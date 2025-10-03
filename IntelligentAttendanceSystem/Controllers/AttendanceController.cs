@@ -245,21 +245,21 @@ namespace IntelligentAttendanceSystem.Controllers
             ViewBag.Users = users.Select(u => new
             {
                 UserId = u.Id,
-                DisplayName = $"{u.FullName} ({(u.UserType == UserType.Student ? u.RollNumber : u.EmployeeId)})"
+                DisplayName = $"{u.FullName} ({(u.CredentialNumber)})"
             });
         }
 
         private async Task PopulateBulkAttendanceItems(BulkAttendanceViewModel model)
         {
-            var users = await _context.Users
+            var users = await _context.FaceUsers
                 .Where(u => u.UserType == model.UserType && u.IsActive)
                 .ToListAsync();
 
             model.AttendanceItems = users.Select(u => new BulkAttendanceItem
             {
-                UserId = u.Id,
-                FullName = u.FullName,
-                Identifier = model.UserType == UserType.Student ? u.RollNumber : u.EmployeeId,
+                UserId = u.DeviceUserId,
+                FullName = u.Name,
+                Identifier =u.CredentialNumber,
                 Status = AttendanceStatus.Present
             }).ToList();
         }

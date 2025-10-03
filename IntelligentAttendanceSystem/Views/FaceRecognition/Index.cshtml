@@ -14,14 +14,17 @@
                 <div class="card-body">
                     <div class="row mb-4">
                         <div class="col-md-6">
-                            <div class="btn-group" role="group">
-                                <button id="startBtn" class="btn btn-success">
-                                    <i class="fas fa-play"></i> Start Recognition
-                                </button>
-                                <button id="stopBtn" class="btn btn-danger" disabled>
-                                    <i class="fas fa-stop"></i> Stop Recognition
-                                </button>
-                            </div>
+                            @if (User.IsInRole("Admin"))
+                            {
+                                <div class="btn-group" role="group">
+                                    <button id="startBtn" class="btn btn-success">
+                                        <i class="fas fa-play"></i> Start Recognition
+                                    </button>
+                                    <button id="stopBtn" class="btn btn-danger" disabled>
+                                        <i class="fas fa-stop"></i> Stop Recognition
+                                    </button>
+                                </div>
+                            }
                             <div class="mt-2">
                                 <label class="form-label">Channel:</label>
                                 <select id="channelSelect" class="form-select" style="width: auto; display: inline-block;">
@@ -428,8 +431,7 @@
         const noGlobalImage = document.getElementById('noGlobalImage');
         const noFaceImage = document.getElementById('noFaceImage');
         const noCandidateImage = document.getElementById('noCandidateImage');
-        // Start face recognition
-        startBtn.addEventListener('click', async () => {
+        async function startRecog(){
             const channel = parseInt(channelSelect.value);
 
             try {
@@ -454,15 +456,13 @@
                 console.error('Error starting recognition:', error);
                 alert('Error starting face recognition');
             }
-        });
-
-        @if (Model.IsFRS.ToString().ToLower() == "true".ToLower())
-        {
-                <text>
-                    startBtn?.click();
-                </text>
+        }
+        // Start face recognition
+        if(startBtn){
+            startBtn.addEventListener('click', startRecog);
         }
             // Stop face recognition
+            if(stopBtn){
             stopBtn.addEventListener('click', async () => {
                 try {
                     const response = await fetch('/FaceRecognition/StopRecognition', {
@@ -483,7 +483,13 @@
                     alert('Error stopping face recognition');
                 }
             });
-
+            }
+        @if (Model.IsFRS.ToString().ToLower() == "true".ToLower())
+        {
+            <text>
+                                                startRecog();
+                                        </text>
+        }
             // Set running state UI
             function setRunningState(running) {
                 isRunning = running;
@@ -596,5 +602,5 @@
                     }
                 });
              });
-        </script>
+    </script>
 }

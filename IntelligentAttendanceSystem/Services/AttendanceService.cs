@@ -52,17 +52,16 @@ namespace IntelligentAttendanceSystem.Services
 
             if (!string.IsNullOrEmpty(filter.SearchString))
             {
-                query = query.Where(a => a.User.FullName.Contains(filter.SearchString) ||
-                                        a.User.RollNumber.Contains(filter.SearchString) ||
-                                        a.User.EmployeeId.Contains(filter.SearchString));
+                query = query.Where(a => a.User.Name.Contains(filter.SearchString) ||
+                                        a.User.CredentialNumber.Contains(filter.SearchString));
             }
 
             return await query.Select(a => new AttendanceViewModel
             {
                 AttendanceId = a.AttendanceId,
                 UserId = a.UserId,
-                FullName = a.User.FullName,
-                Identifier = a.User.UserType == UserType.Student ? a.User.RollNumber : a.User.EmployeeId,
+                FullName = a.User.Name,
+                Identifier = a.User.CredentialNumber,
                 Date = a.Date,
                 CheckInTime = a.CheckInTime,
                 CheckOutTime = a.CheckOutTime,
@@ -170,7 +169,7 @@ namespace IntelligentAttendanceSystem.Services
         public async Task<List<AttendanceReport>> GenerateAttendanceReportAsync(UserType userType, DateTime fromDate, DateTime toDate)
         {
             // Remove HasValue check since userType is not nullable
-            var users = await _context.Users
+            var users = await _context.FaceUsers
                 .Where(u => u.UserType == userType && u.IsActive)
                 .ToListAsync();
 
@@ -179,7 +178,7 @@ namespace IntelligentAttendanceSystem.Services
             foreach (var user in users)
             {
                 var attendances = await _context.Attendances
-                    .Where(a => a.UserId == user.Id && a.Date >= fromDate && a.Date <= toDate)
+                    .Where(a => a.UserId == user.DeviceUserId && a.Date >= fromDate && a.Date <= toDate)
                     .ToListAsync();
 
                 var totalDays = (toDate - fromDate).Days + 1;
@@ -195,9 +194,9 @@ namespace IntelligentAttendanceSystem.Services
 
                 report.Add(new AttendanceReport
                 {
-                    UserId = user.Id,
-                    FullName = user.FullName,
-                    Identifier = userType == UserType.Student ? user.RollNumber : user.EmployeeId,
+                    UserId = user.DeviceUserId,
+                    FullName = user.Name,
+                    Identifier = user.CredentialNumber,
                     TotalDays = totalDays,
                     PresentDays = presentDays,
                     AbsentDays = absentDays,

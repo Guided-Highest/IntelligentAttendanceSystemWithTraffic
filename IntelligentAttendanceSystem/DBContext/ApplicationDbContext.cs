@@ -41,11 +41,16 @@ namespace IntelligentAttendanceSystem.Data
             // Configure FaceUser
             builder.Entity<FaceUser>(entity =>
             {
-                entity.HasIndex(e => e.UserId).IsUnique();
+                entity.HasIndex(e => e.DeviceUserId).IsUnique();
                 entity.HasIndex(e => e.Name);
                 entity.HasIndex(e => e.Department);
                 entity.HasIndex(e => e.IsActive);
             });
+            builder.Entity<FaceUser>()
+        .HasMany(u => u.Attendances)
+        .WithOne(a => a.User)
+        .HasForeignKey(a => a.UserId)
+        .HasPrincipalKey(u => u.DeviceUserId);
 
             builder.Entity<SystemDevice>(entity =>
             {
@@ -98,13 +103,6 @@ namespace IntelligentAttendanceSystem.Data
             builder.Entity<ApplicationUser>()
         .HasIndex(e => new { e.CredentialType, e.CredentialNumber })
         .IsUnique();
-
-            // Configure relationships
-            builder.Entity<Attendance>()
-                .HasOne(a => a.User)
-                .WithMany(u => u.Attendances)
-                .HasForeignKey(a => a.UserId)
-                .OnDelete(DeleteBehavior.Cascade);
 
             // Unique constraint for user and date
             builder.Entity<Attendance>()

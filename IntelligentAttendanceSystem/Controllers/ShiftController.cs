@@ -354,7 +354,7 @@ namespace IntelligentAttendanceSystem.Controllers
             ViewBag.Users = users.Select(u => new
             {
                 UserId = u.Id,
-                DisplayName = $"{u.FullName} ({u.UserType}) - Current Shift: {u.CurrentShift?.ShiftName ?? "Not Assigned"}"
+                DisplayName = $"{u.FullName} () - Current Shift: {u.CurrentShift?.ShiftName ?? "Not Assigned"}"
             });
         }
         private async Task PopulateShiftAssignmentData(ShiftAssignmentViewModel model, ShiftMode mode)
@@ -388,7 +388,7 @@ namespace IntelligentAttendanceSystem.Controllers
             ViewBag.Users = users.Select(u => new
             {
                 UserId = u.Id,
-                DisplayName = $"{u.FullName} ({u.UserType}) - Current Shift: {GlobalHelper.GetCurrentShiftName(u) ?? "Not Assigned"}"
+                DisplayName = $"{u.FullName} () - Current Shift: {GlobalHelper.GetCurrentShiftName(u) ?? "Not Assigned"}"
             });
         }
         private async Task PsadEfficient(ShiftAssignmentViewModel model)
@@ -414,14 +414,13 @@ namespace IntelligentAttendanceSystem.Controllers
                                          {
                                              UserId = u.Id,
                                              u.FullName,
-                                             u.UserType,
                                              CurrentShiftName = s != null ? s.ShiftName : "Not Assigned"
                                          }).ToListAsync();
 
             ViewBag.Users = usersWithShifts.Select(u => new
             {
                 u.UserId,
-                DisplayName = $"{u.FullName} ({u.UserType}) - Current Shift: {u.CurrentShiftName}"
+                DisplayName = $"{u.FullName} () - Current Shift: {u.CurrentShiftName}"
             });
         }
         private async Task PsadSimpler(ShiftAssignmentViewModel model)
@@ -441,7 +440,7 @@ namespace IntelligentAttendanceSystem.Controllers
             ViewBag.Users = users.Select(u => new
             {
                 UserId = u.Id,
-                DisplayName = $"{u.FullName} ({u.UserType}) - Current Shift: {u.CurrentShift?.ShiftName ?? "Not Assigned"}"
+                DisplayName = $"{u.FullName} () - Current Shift: {u.CurrentShift?.ShiftName ?? "Not Assigned"}"
             });
         }
 

@@ -5,8 +5,10 @@ namespace IntelligentAttendanceSystem.Models
 {
     public class FaceUser
     {
+        [Key]
         public int Id { get; set; }
-        public string? UserId { get; set; } // Device user ID
+        [Required]
+        public string? DeviceUserId { get; set; } // Device user ID
         public string Name { get; set; }
         public Gender Gender { get; set; }
         public DateTime? BirthDate { get; set; }
@@ -25,8 +27,11 @@ namespace IntelligentAttendanceSystem.Models
         public string CredentialNumber { get; set; }
         [Display(Name = "Country")]
         public string Region { get; set; }
+        [Required]
+        public UserType UserType { get; set; }
         // Navigation property to attendance records
         public virtual ICollection<FaceAttendanceRecord> AttendanceRecords { get; set; }
+        public virtual ICollection<Attendance> Attendances { get; set; }
     }
 
     public class FaceUserCreateRequest

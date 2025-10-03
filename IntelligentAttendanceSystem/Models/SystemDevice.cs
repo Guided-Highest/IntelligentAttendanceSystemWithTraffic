@@ -1,5 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using System.Diagnostics.CodeAnalysis;
 
 namespace IntelligentAttendanceSystem.Models
 {
@@ -29,9 +30,11 @@ namespace IntelligentAttendanceSystem.Models
         public int Id { get; set; }
 
         [Display(Name = "Status")]
+        [AllowNull]
         public string? Status { get; set; }
 
         [Display(Name = "IP Version")]
+        [AllowNull]
         public string? IPVersion { get; set; }
 
         [Required]
@@ -45,22 +48,28 @@ namespace IntelligentAttendanceSystem.Models
         public ushort Port { get; set; }
 
         [Display(Name = "Subnet Mask")]
+        [AllowNull]
         public string? SubnetMask { get; set; }
 
         [Display(Name = "Gateway")]
+        [AllowNull]
         public string? Gateway { get; set; }
 
         [Display(Name = "MAC Address")]
+        [AllowNull]
         public string? MacAddress { get; set; }
 
         [Display(Name = "Device Type")]
+        [AllowNull]
         public string? DeviceType { get; set; }
 
         [Display(Name = "Detail Type")]
+        [AllowNull]
         public string? DetailType { get; set; }
 
         [Display(Name = "HTTP Port")]
         [Range(1, 65535, ErrorMessage = "HTTP Port must be between 1 and 65535")]
+        [AllowNull]
         public int? HttpPort { get; set; }
 
         [Required]
@@ -73,6 +82,7 @@ namespace IntelligentAttendanceSystem.Models
         public string Password { get; set; }
 
         public DateTime CreatedDate { get; set; } = DateTime.Now;
+        [AllowNull]
         public DateTime? UpdatedDate { get; set; }
 
         public bool IsActive { get; set; } = true;
@@ -81,6 +91,6 @@ namespace IntelligentAttendanceSystem.Models
         public bool IsInit { get; set; }
 
         [NotMapped]
-        public string No { get; set; }
+        public string? No { get; set; }
     }
 }
