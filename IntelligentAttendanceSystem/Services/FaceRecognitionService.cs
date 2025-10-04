@@ -195,7 +195,11 @@ namespace IntelligentAttendanceSystem.Services
                         case (uint)EM_EVENT_IVS_TYPE.FACEDETECT:
                             ProcessFaceDetectionEvent(pEventInfo, pBuffer, dwBufSize);
                             break;
+                        case (uint)EM_EVENT_IVS_TYPE.TRAFFICJUNCTION:
+                            ProcessTrafficJunctionEvent(pEventInfo, pBuffer, dwBufSize);
+                            break;
                         default:
+                            _logger.LogDebug($"Unhandled event type: {dwEventType}");
                             break;
                     }
                 }
