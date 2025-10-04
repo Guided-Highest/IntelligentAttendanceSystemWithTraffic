@@ -2,6 +2,7 @@
 using IntelligentAttendanceSystem.Hub;
 using IntelligentAttendanceSystem.Interface;
 using IntelligentAttendanceSystem.Models;
+using IntelligentAttendanceSystem.Structures;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using NetSDKCS;
@@ -495,7 +496,93 @@ namespace IntelligentAttendanceSystem.Services
         {
             return beard.ToString().Replace("_", " ");
         }
+        #region Trafic Count
+        private void ProcessTrafficJunctionEvent(IntPtr pEventInfo, IntPtr pBuffer, uint dwBufSize)
+        {
+            try
+            {
+                // Parse the event information structure
+                var eventInfo = Marshal.PtrToStructure<DH_EVENT_TRAFFICJUNCTION>(pEventInfo);
 
+                _logger.LogInformation($"Traffic Junction Event - " +
+                                      $"Time: {eventInfo.UTC.wYear.ToString()}" +
+                                      $"-{eventInfo.UTC.wMonth.ToString()}-{eventInfo.UTC.wDay.ToString()}," +
+                                      $" {eventInfo.UTC.wHour.ToString()}:{eventInfo.UTC.wMinute.ToString()}" +
+                                      $":{eventInfo.UTC.wSecond.ToString()}" +
+                                      $"Object Type: {eventInfo.stTrafficCar.emObjectType}, " +
+                                      $"Vehicle Type: {eventInfo.stTrafficCar.emVehicleType}, " +
+                                      $"Speed: {eventInfo.stTrafficCar.fSpeed} km/h, " +
+                                      $"Direction: {eventInfo.stTrafficCar.emDirect}");
+
+                // Count vehicles based on type and direction
+                CountVehicle(eventInfo.stTrafficCar.emVehicleType, eventInfo.stTrafficCar.emDirect);
+
+                // Process image data if available
+                if (pBuffer != IntPtr.Zero && dwBufSize > 0)
+                {
+                    ProcessVehicleImage(pBuffer, dwBufSize, eventInfo);
+                }
+
+                // You can also raise an event or update UI here
+                OnVehicleDetected?.Invoke(this, eventInfo);
+
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error processing traffic junction event");
+            }
+        }
+        #region Vehicle Counting Logic
+        public event EventHandler<DH_EVENT_TRAFFICJUNCTION> OnVehicleDetected;
+        private readonly Dictionary<EM_VEHICLE_TYPE, int> _vehicleCounts = new Dictionary<EM_VEHICLE_TYPE, int>();
+        private readonly object _countLock = new object();
+
+        private void CountVehicle(EM_VEHICLE_TYPE vehicleType, EM_DIRECTION direction)
+        {
+            lock (_countLock)
+            {
+                if (!_vehicleCounts.ContainsKey(vehicleType))
+                {
+                    _vehicleCounts[vehicleType] = 0;
+                }
+                _vehicleCounts[vehicleType]++;
+
+                _logger.LogInformation($"Vehicle counted - Type: {vehicleType}, " +
+                                      $"Direction: {direction}, " +
+                                      $"Total {vehicleType}s: {_vehicleCounts[vehicleType]}");
+            }
+        }
+
+        public Dictionary<EM_VEHICLE_TYPE, int> GetVehicleCounts()
+        {
+            lock (_countLock)
+            {
+                return new Dictionary<EM_VEHICLE_TYPE, int>(_vehicleCounts);
+            }
+        }
+        #endregion
+        #region TC Image Process
+        private void ProcessVehicleImage(IntPtr pBuffer, uint dwBufSize, DH_EVENT_TRAFFICJUNCTION eventInfo)
+        {
+            try
+            {
+                // Convert the image buffer to a byte array
+                byte[] imageData = new byte[dwBufSize];
+                Marshal.Copy(pBuffer, imageData, 0, (int)dwBufSize);
+
+                // Save image or process further
+                string fileName = $"Vehicle_{eventInfo.stTrafficCar.emVehicleType}_{DateTime.Now:yyyyMMddHHmmssfff}.jpg";
+                File.WriteAllBytes(fileName, imageData);
+
+                _logger.LogInformation($"Vehicle image saved: {fileName}");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error processing vehicle image");
+            }
+        }
+        #endregion
+        #endregion
         public void Dispose()
         {
             _healthCheckTimer?.Dispose();
