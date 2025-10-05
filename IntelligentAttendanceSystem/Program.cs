@@ -31,6 +31,7 @@ builder.Services.AddScoped<IDahuaService_One, DahuaService_One>();
 builder.Services.AddScoped<IFaceManagementService, FaceManagementService>();
 builder.Services.AddScoped<IReportingService, ReportingService>();
 builder.Services.AddSingleton<IDahuaDeviceService, DahuaDeviceService>();
+builder.Services.AddScoped<IVehicleCountingService, VehicleCountingService>();
 // Add to your service registration in Program.cs
 builder.Services.AddSingleton<IFaceRecognitionService, FaceRecognitionService>();
 // Add services to the container.

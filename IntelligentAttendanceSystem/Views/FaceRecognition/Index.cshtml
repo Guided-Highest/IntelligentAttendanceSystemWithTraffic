@@ -136,7 +136,21 @@
                             </div>
                         </div>
                     </div>
+                    <div class="row mt-4">
+                        <div class="col-12">
 
+                            <div class="card">
+                                <div class="card-header">
+                                    <h5 class="card-title mb-0">Vehicle Count</h5>
+                                </div>
+                                <div class="card-body">
+                                    <div id="trafficViolations" style="max-height: 200px; overflow-y: auto;">
+                                        <div class="text-muted">No Vehicle COunt yet...</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                     <!-- Event Log -->
                     <div class="row mt-4">
                         <div class="col-12">
@@ -211,6 +225,11 @@
                 connection.on("HealthCheck", (healthInfo) => {
                     updateHealthStatus(healthInfo);
                 });
+                connection.on("TrafficJunctionEvent", (trafficEvent) => {
+                    updateTrafficJunctionUI(trafficEvent);
+                    addEventLog(`Traffic violation: ${trafficEvent.vehicleInfo.plateNumber} - ${trafficEvent.violationInfo.violationType}`, 'warning');
+                });
+
 
                 connection.onreconnecting((error) => {
                     addEventLog('Connection lost. Reconnecting...', 'warning');
@@ -265,6 +284,63 @@
                 }
             }
         }
+
+                // Add UI update function for traffic events
+        function updateTrafficJunctionUI(trafficEvent) {
+            // Create or update traffic violation section in your UI
+            const trafficSection = document.getElementById('trafficViolations') || createTrafficSection();
+
+            const violationHtml = `
+                <div class="card mb-3 border-warning">
+                    <div class="card-header bg-warning text-dark">
+                        <h6 class="mb-0">
+                            <i class="fas fa-car-crash"></i> Traffic Violation
+                            <span class="badge bg-danger float-end">${trafficEvent.violationInfo.violationType}</span>
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-4">
+                                ${trafficEvent.globalImageBase64 ?
+                                    `<img src="data:image/jpeg;base64,${trafficEvent.globalImageBase64}" class="img-fluid rounded" alt="Scene">` :
+                                    '<div class="text-muted">No scene image</div>'}
+                            </div>
+                            <div class="col-md-4">
+                                ${trafficEvent.vehicleInfo.vehicleImageBase64 ?
+                                    `<img src="data:image/jpeg;base64,${trafficEvent.vehicleInfo.vehicleImageBase64}" class="img-fluid rounded" alt="Vehicle">` :
+                                    '<div class="text-muted">No vehicle image</div>'}
+                            </div>
+                            <div class="col-md-4">
+                                <table class="table table-sm">
+                                    <tr><td>Plate:</td><td><strong>${trafficEvent.vehicleInfo.plateNumber}</strong></td></tr>
+                                    <tr><td>Vehicle:</td><td>${trafficEvent.vehicleInfo.vehicleType}</td></tr>
+                                    <tr><td>Color:</td><td>${trafficEvent.vehicleInfo.color}</td></tr>
+                                    <tr><td>Speed:</td><td>${trafficEvent.vehicleInfo.speed} km/h</td></tr>
+                                    <tr><td>Junction:</td><td>${trafficEvent.junctionInfo.junctionName}</td></tr>
+                                    <tr><td>Lane:</td><td>${trafficEvent.violationInfo.laneNumber}</td></tr>
+                                    <tr><td>Confidence:</td><td>${(trafficEvent.violationInfo.confidence * 100).toFixed(1)}%</td></tr>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-footer text-muted small">
+                        ${new Date(trafficEvent.eventTime).toLocaleString()}
+                    </div>
+                </div>
+            `;
+
+            trafficSection.innerHTML = violationHtml + trafficSection.innerHTML;
+        }
+
+        function createTrafficSection() {
+            const section = document.createElement('div');
+            section.id = 'trafficViolations';
+            section.className = 'mt-4';
+            section.innerHTML = '<h5><i class="fas fa-traffic-light"></i> Traffic Violations</h5>';
+            document.querySelector('.card-body').appendChild(section);
+            return section;
+        }
+
 
          function updateConnectionStatus(connected) {
             const statusElement = document.getElementById('connectionStatus');
@@ -486,9 +562,9 @@
             }
         @if (Model.IsFRS.ToString().ToLower() == "true".ToLower())
         {
-            <text>
-                                                startRecog();
-                                        </text>
+                        <text>
+                                                            startRecog();
+                                                    </text>
         }
             // Set running state UI
             function setRunningState(running) {

@@ -20,9 +20,27 @@ namespace IntelligentAttendanceSystem.Data
         public DbSet<SystemDevice> SystemDevices { get; set; }
         public DbSet<FaceAttendanceRecord> FaceAttendanceRecords { get; set; }
         public DbSet<FaceUser> FaceUsers { get; set; }
+        public DbSet<VehicleCount> VehicleCounts { get; set; }
+        public DbSet<TrafficRecord> trafficRecords { get; set; }
         protected override void OnModelCreating(ModelBuilder builder)
         {
             base.OnModelCreating(builder);
+
+            builder.Entity<TrafficRecord>(entity =>
+            {
+                entity.HasIndex(e => e.EventId).IsUnique();
+                entity.HasIndex(e => e.EventTime);
+                entity.HasIndex(e => e.PlateNumber);
+                entity.HasIndex(e => e.ViolationType);
+                entity.HasIndex(e => e.JunctionId);
+            });
+
+            builder.Entity<VehicleCount>(entity =>
+            {
+                entity.HasIndex(e => new { e.CountDate, e.VehicleType, e.Direction, e.JunctionId });
+                entity.HasIndex(e => e.CountDate);
+                entity.HasIndex(e => e.JunctionId);
+            });
             builder.Entity<FaceAttendanceRecord>(entity =>
             {
                 entity.HasIndex(e => e.EventId).IsUnique();

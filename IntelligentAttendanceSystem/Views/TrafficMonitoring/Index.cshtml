@@ -1,0 +1,556 @@
+﻿@{
+    ViewData["Title"] = "Traffic Monitoring Dashboard";
+    Layout = "_Layout";
+}
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                    <h4 class="mb-0"><i class="fas fa-traffic-light"></i> Traffic Monitoring Dashboard</h4>
+                    <div>
+                        <span id="trafficConnectionStatus" class="badge bg-success">
+                            <i class="fas fa-circle"></i> Connected
+                        </span>
+                        <button id="refreshStats" class="btn btn-sm btn-light ms-2">
+                            <i class="fas fa-sync-alt"></i> Refresh
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <!-- Connection Status -->
+                    <div id="trafficConnectionPanel" class="alert alert-info mb-4">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <i class="fas fa-signal"></i>
+                                <strong>Real-time Traffic Monitoring</strong>
+                                <span id="connectionDetails" class="ms-2">Waiting for data...</span>
+                            </div>
+                            <div>
+                                <button id="trafficReconnectBtn" class="btn btn-sm btn-outline-primary me-2">
+                                    <i class="fas fa-sync-alt"></i> Reconnect
+                                </button>
+                                <button id="trafficDisconnectBtn" class="btn btn-sm btn-outline-secondary">
+                                    <i class="fas fa-plug"></i> Disconnect
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Statistics Dashboard -->
+                    <div class="row mb-4">
+                        <div class="col-md-3">
+                            <div class="card bg-success text-white">
+                                <div class="card-body text-center">
+                                    <h3 id="totalVehiclesToday">0</h3>
+                                    <p class="mb-0">Total Today</p>
+                                    <small><i class="fas fa-car"></i> All vehicles</small>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card bg-info text-white">
+                                <div class="card-body text-center">
+                                    <h3 id="currentHourCount">0</h3>
+                                    <p class="mb-0">This Hour</p>
+                                    <small><i class="fas fa-clock"></i> Current activity</small>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card bg-warning text-white">
+                                <div class="card-body text-center">
+                                    <h3 id="uniqueTypes">0</h3>
+                                    <p class="mb-0">Vehicle Types</p>
+                                    <small><i class="fas fa-list"></i> Diversity</small>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card bg-danger text-white">
+                                <div class="card-body text-center">
+                                    <h3 id="activeJunctions">1</h3>
+                                    <p class="mb-0">Active Junctions</p>
+                                    <small><i class="fas fa-crosshairs"></i> Monitoring</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Real-time Vehicle Detections -->
+                    <div class="row">
+                        <div class="col-md-8">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h5 class="card-title mb-0">
+                                        <i class="fas fa-car-side"></i> Real-time Vehicle Detections
+                                        <span id="detectionCount" class="badge bg-primary">0</span>
+                                    </h5>
+                                </div>
+                                <div class="card-body">
+                                    <div id="vehicleDetections" style="max-height: 400px; overflow-y: auto;">
+                                        <div class="text-center text-muted py-4">
+                                            <i class="fas fa-car fa-2x mb-2"></i>
+                                            <p>Waiting for vehicle detections...</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Vehicle Type Distribution -->
+                        <div class="col-md-4">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h5 class="card-title mb-0">
+                                        <i class="fas fa-chart-pie"></i> Vehicle Type Distribution
+                                    </h5>
+                                </div>
+                                <div class="card-body">
+                                    <div id="vehicleTypeChart">
+                                        <div class="text-center text-muted py-4">
+                                            <div class="spinner-border" role="status">
+                                                <span class="visually-hidden">Loading...</span>
+                                            </div>
+                                            <p class="mt-2">Loading distribution...</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Direction Statistics -->
+                            <div class="card mt-3">
+                                <div class="card-header">
+                                    <h5 class="card-title mb-0">
+                                        <i class="fas fa-directions"></i> Direction Statistics
+                                    </h5>
+                                </div>
+                                <div class="card-body">
+                                    <div id="directionStats">
+                                        <div class="text-center text-muted py-3">
+                                            <p>No direction data yet</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Detailed Statistics -->
+                    <div class="row mt-4">
+                        <div class="col-12">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h5 class="card-title mb-0">
+                                        <i class="fas fa-chart-bar"></i> Detailed Statistics
+                                    </h5>
+                                </div>
+                                <div class="card-body">
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <h6>Vehicle Types Today</h6>
+                                            <div id="vehicleTypeCounts" class="mb-3">
+                                                <!-- Will be populated by JavaScript -->
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <h6>Direction Analysis</h6>
+                                            <div id="directionCounts">
+                                                <!-- Will be populated by JavaScript -->
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/7.0.10/signalr.min.js"></script>
+    <script>
+        let trafficConnection;
+        let detectionCounter = 0;
+        let vehicleStats = {
+            totalToday: 0,
+            currentHour: 0,
+            types: {},
+            directions: {}
+        };
+
+        // Initialize Traffic Monitoring SignalR connection
+        async function initializeTrafficMonitoring() {
+            try {
+                // Use the same hub connection for both face recognition and traffic monitoring
+                trafficConnection = new signalR.HubConnectionBuilder()
+                    .withUrl("/faceRecognitionHub")
+                    .withAutomaticReconnect()
+                    .configureLogging(signalR.LogLevel.Warning)
+                    .build();
+
+                // Traffic-specific event handlers
+                trafficConnection.on("TrafficConnectionStatus", (status) => {
+                    updateTrafficConnectionStatus(true);
+                    showTrafficToast(status.Message, 'success');
+                });
+
+                trafficConnection.on("VehicleCountUpdate", (countData) => {
+                    updateVehicleCounts(countData);
+                });
+
+                trafficConnection.on("VehicleDetected", (vehicleData) => {
+                    addVehicleDetection(vehicleData);
+                    updateDetectionCounter();
+                });
+
+                trafficConnection.onreconnecting(() => {
+                    updateTrafficConnectionStatus(false);
+                    showTrafficToast('Traffic connection lost. Reconnecting...', 'warning');
+                });
+
+                trafficConnection.onreconnected(() => {
+                    updateTrafficConnectionStatus(true);
+                    showTrafficToast('Traffic connection restored', 'success');
+                    // Rejoin traffic monitoring group
+                    trafficConnection.invoke("JoinTrafficMonitoringGroup");
+                });
+
+                trafficConnection.onclose(() => {
+                    updateTrafficConnectionStatus(false);
+                    showTrafficToast('Traffic connection closed', 'danger');
+                });
+
+                await trafficConnection.start();
+                await trafficConnection.invoke("JoinTrafficMonitoringGroup");
+
+                console.log('Traffic monitoring connected successfully');
+
+            } catch (err) {
+                console.error('Traffic monitoring connection error:', err);
+                showTrafficToast('Failed to connect to traffic monitoring', 'danger');
+            }
+        }
+
+        // Update vehicle counts display
+        function updateVehicleCounts(countData) {
+            // Update main statistics
+            document.getElementById('totalVehiclesToday').textContent = countData.totalToday.toLocaleString();
+            document.getElementById('currentHourCount').textContent = countData.hourlyStats.total.toLocaleString();
+            document.getElementById('uniqueTypes').textContent = Object.keys(countData.vehicleTypeCounts).length;
+
+            // Update vehicle stats object
+            vehicleStats = {
+                totalToday: countData.totalToday,
+                currentHour: countData.hourlyStats.total,
+                types: countData.vehicleTypeCounts,
+                directions: countData.directionCounts
+            };
+
+            // Update detailed displays
+            updateVehicleTypeDisplay(countData.vehicleTypeCounts);
+            updateDirectionDisplay(countData.directionCounts);
+            updateTypeDirectionMatrix(countData.typeDirectionMatrix);
+        }
+
+        // Add vehicle detection to the list
+        function addVehicleDetection(vehicleData) {
+            detectionCounter++;
+            console.log(vehicleData);
+            const detectionsContainer = document.getElementById('vehicleDetections');
+
+            const detectionElement = document.createElement('div');
+            detectionElement.className = 'card mb-2';
+            detectionElement.innerHTML = `
+                <div class="card-body py-2">
+                    <div class="row align-items-center">
+                        <div class="col-md-3">
+                            <strong>${vehicleData.vehicleType}</strong>
+                            <div class="small text-muted">${vehicleData.plateNumber || 'No Plate'}</div>
+                        </div>
+                        <div class="col-md-2">
+                            <span class="badge bg-info">${vehicleData.speed} km/h</span>
+                        </div>
+                        <div class="col-md-2">
+                            <span class="badge bg-${getDirectionBadgeColor(vehicleData.direction)}">
+                                ${vehicleData.direction}
+                            </span>
+                        </div>
+                        <div class="col-md-2">
+                            <span class="badge bg-${getConfidenceBadgeColor(vehicleData.confidence)}">
+                                ${vehicleData.confidence}%
+                            </span>
+                        </div>
+                        <div class="col-md-3 text-end">
+                            <small class="text-muted">${new Date(vehicleData.eventTime).toLocaleTimeString()}</small>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            // Add to top of list
+            if (detectionsContainer.firstElementChild && detectionsContainer.firstElementChild.className.includes('text-muted')) {
+                detectionsContainer.innerHTML = '';
+            }
+
+            detectionsContainer.insertBefore(detectionElement, detectionsContainer.firstChild);
+
+            // Limit to 20 most recent detections
+            const maxDetections = 20;
+            if (detectionsContainer.children.length > maxDetections) {
+                detectionsContainer.removeChild(detectionsContainer.lastChild);
+            }
+        }
+
+        // Update detection counter
+        function updateDetectionCounter() {
+            document.getElementById('detectionCount').textContent = detectionCounter;
+        }
+
+        // Update vehicle type display
+        function updateVehicleTypeDisplay(typeCounts) {
+            const container = document.getElementById('vehicleTypeCounts');
+            const chartContainer = document.getElementById('vehicleTypeChart');
+
+            if (Object.keys(typeCounts).length === 0) {
+                container.innerHTML = '<p class="text-muted">No vehicle data yet</p>';
+                chartContainer.innerHTML = '<div class="text-center text-muted py-4"><p>No data available</p></div>';
+                return;
+            }
+
+            // Update detailed list
+            let html = '';
+            Object.entries(typeCounts).forEach(([type, count]) => {
+                const percentage = ((count / vehicleStats.totalToday) * 100).toFixed(1);
+                html += `
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span>${type}</span>
+                        <div>
+                            <span class="badge bg-primary">${count}</span>
+                            <small class="text-muted ms-1">${percentage}%</small>
+                        </div>
+                    </div>
+                    <div class="progress mb-3" style="height: 8px;">
+                        <div class="progress-bar" role="progressbar"
+                             style="width: ${percentage}%;"
+                             aria-valuenow="${percentage}"
+                             aria-valuemin="0"
+                             aria-valuemax="100"></div>
+                    </div>
+                `;
+            });
+            container.innerHTML = html;
+
+            // Update chart (simplified)
+            updateVehicleTypeChart(typeCounts);
+        }
+
+        // Update direction display
+        function updateDirectionDisplay(directionCounts) {
+            const container = document.getElementById('directionCounts');
+            const statsContainer = document.getElementById('directionStats');
+
+            if (Object.keys(directionCounts).length === 0) {
+                container.innerHTML = '<p class="text-muted">No direction data yet</p>';
+                statsContainer.innerHTML = '<div class="text-center text-muted py-3"><p>No direction data</p></div>';
+                return;
+            }
+
+            let html = '';
+            let statsHtml = '';
+
+            Object.entries(directionCounts).forEach(([direction, count]) => {
+                const percentage = ((count / vehicleStats.totalToday) * 100).toFixed(1);
+                html += `
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span>${direction}</span>
+                        <div>
+                            <span class="badge bg-secondary">${count}</span>
+                            <small class="text-muted ms-1">${percentage}%</small>
+                        </div>
+                    </div>
+                `;
+
+                statsHtml += `
+                    <div class="mb-2">
+                        <div class="d-flex justify-content-between">
+                            <span>${direction}</span>
+                            <span class="fw-bold">${count}</span>
+                        </div>
+                        <div class="progress" style="height: 6px;">
+                            <div class="progress-bar bg-${getDirectionBadgeColor(direction)}"
+                                 style="width: ${percentage}%;"></div>
+                        </div>
+                    </div>
+                `;
+            });
+
+            container.innerHTML = html;
+            statsContainer.innerHTML = statsHtml;
+        }
+
+        // Update type-direction matrix
+        function updateTypeDirectionMatrix(matrix) {
+            // This could be implemented as a heatmap or detailed table
+            console.log('Type-Direction Matrix:', matrix);
+        }
+
+        // Simplified vehicle type chart
+        function updateVehicleTypeChart(typeCounts) {
+            const container = document.getElementById('vehicleTypeChart');
+            const types = Object.keys(typeCounts);
+            const counts = Object.values(typeCounts);
+            const total = counts.reduce((sum, count) => sum + count, 0);
+
+            if (total === 0) {
+                container.innerHTML = '<div class="text-center text-muted py-4"><p>No data available</p></div>';
+                return;
+            }
+
+            let chartHtml = '';
+            types.forEach((type, index) => {
+                const percentage = ((counts[index] / total) * 100).toFixed(1);
+                const color = getChartColor(index);
+
+                chartHtml += `
+                    <div class="mb-2">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <span class="badge" style="background-color: ${color}">${type}</span>
+                            </div>
+                            <div>
+                                <span class="fw-bold">${counts[index]}</span>
+                                <small class="text-muted">(${percentage}%)</small>
+                            </div>
+                        </div>
+                        <div class="progress" style="height: 10px;">
+                            <div class="progress-bar" style="width: ${percentage}%; background-color: ${color};"></div>
+                        </div>
+                    </div>
+                `;
+            });
+
+            container.innerHTML = chartHtml;
+        }
+
+        // Helper functions
+        function getDirectionBadgeColor(direction) {
+            const colors = {
+                'Left': 'info',
+                'Right': 'success',
+                'Straight': 'primary',
+                'Left Turn': 'warning',
+                'Right Turn': 'secondary',
+                'U-Turn': 'danger'
+            };
+            return colors[direction] || 'dark';
+        }
+
+        function getConfidenceBadgeColor(confidence) {
+            if (confidence >= 90) return 'success';
+            if (confidence >= 70) return 'info';
+            if (confidence >= 50) return 'warning';
+            return 'danger';
+        }
+
+        function getChartColor(index) {
+            const colors = ['#007bff', '#28a745', '#ffc107', '#dc3545', '#6c757d', '#17a2b8', '#e83e8c', '#fd7e14'];
+            return colors[index % colors.length];
+        }
+
+        function updateTrafficConnectionStatus(connected) {
+            const statusElement = document.getElementById('trafficConnectionStatus');
+            const detailsElement = document.getElementById('connectionDetails');
+
+            if (connected) {
+                statusElement.innerHTML = '<i class="fas fa-circle"></i> Connected';
+                statusElement.className = 'badge bg-success';
+                detailsElement.textContent = 'Receiving real-time traffic data';
+            } else {
+                statusElement.innerHTML = '<i class="fas fa-circle"></i> Disconnected';
+                statusElement.className = 'badge bg-danger';
+                detailsElement.textContent = 'Connection lost';
+            }
+        }
+
+        function showTrafficToast(message, type) {
+            // Simple notification - you can replace with a proper toast library
+            const alertClass = `alert alert-${type} alert-dismissible fade show`;
+            const toastHtml = `
+                <div class="${alertClass}" role="alert">
+                    <strong>Traffic Monitoring:</strong> ${message}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            `;
+
+            // Prepend to the connection panel
+            const connectionPanel = document.getElementById('trafficConnectionPanel');
+            connectionPanel.insertAdjacentHTML('afterend', toastHtml);
+        }
+
+        // Event listeners
+                document.getElementById('refreshStats').addEventListener('click', () => {
+            if (trafficConnection && trafficConnection.state === signalR.HubConnectionState.Connected) {
+                trafficConnection.invoke("TrafficPing").then(pong => {
+                    showTrafficToast(`Refreshed: ${pong}`, 'info');
+                });
+            }
+        });
+
+        document.getElementById('trafficReconnectBtn').addEventListener('click', () => {
+            initializeTrafficMonitoring();
+        });
+
+        document.getElementById('trafficDisconnectBtn').addEventListener('click', () => {
+            if (trafficConnection) {
+                trafficConnection.stop();
+            }
+        });
+
+        // Initialize when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeTrafficMonitoring();
+        });
+
+        // Cleanup when leaving page
+               window.addEventListener('beforeunload', () => {
+            if (trafficConnection) {
+                trafficConnection.invoke("LeaveTrafficMonitoringGroup");
+                trafficConnection.stop();
+            }
+        });
+    </script>
+
+    <style>
+        .card {
+            box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+            margin-bottom: 1rem;
+        }
+
+        #vehicleDetections {
+            scrollbar-width: thin;
+            scrollbar-color: #dee2e6 #f8f9fa;
+        }
+
+            #vehicleDetections::-webkit-scrollbar {
+                width: 6px;
+            }
+
+            #vehicleDetections::-webkit-scrollbar-track {
+                background: #f8f9fa;
+            }
+
+            #vehicleDetections::-webkit-scrollbar-thumb {
+                background-color: #dee2e6;
+                border-radius: 3px;
+            }
+
+        .progress {
+            background-color: #e9ecef;
+        }
+    </style>
+}

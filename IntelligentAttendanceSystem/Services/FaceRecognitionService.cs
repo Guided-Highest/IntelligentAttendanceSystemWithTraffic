@@ -26,7 +26,6 @@ namespace IntelligentAttendanceSystem.Services
         private readonly List<FaceRecognitionEvent> _recentEvents = new List<FaceRecognitionEvent>();
         private readonly int _maxRecentEvents = 50;
         private Timer _healthCheckTimer;
-
         public bool IsFaceRecognationStart { get; private set; }
 
         public event Action<FaceRecognitionEvent> OnFaceRecognitionEvent;
@@ -41,10 +40,29 @@ namespace IntelligentAttendanceSystem.Services
             _deviceService = deviceService;
             _logger = logger;
             _hubContext = hubContext;
-            _serviceScopeFactory = serviceScopeFactory;
-
+            _serviceScopeFactory = serviceScopeFactory;// Add this
+            using var scope = _serviceScopeFactory.CreateScope();
+            var _vehicleCountingService = scope.ServiceProvider.GetRequiredService<IVehicleCountingService>();
+            // Subscribe to vehicle detection events
+            _vehicleCountingService.OnVehicleDetected += OnVehicleDetected;
             InitializeCallbacks();
             StartHealthChecks();
+        }
+        private void OnVehicleDetected(object sender, VehicleDetectionEvent e)
+        {
+            // Handle vehicle detection events if needed
+            _logger.LogInformation($"Vehicle detected: {e.VehicleType} moving {e.Direction}");
+            _ = Task.Run(async () =>
+            {
+                try
+                {
+                    await SendVehicleDetection(e);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Error sending vehicle detection via SignalR");
+                }
+            });
         }
         private void StartHealthChecks()
         {
@@ -271,7 +289,7 @@ namespace IntelligentAttendanceSystem.Services
                 }
 
                 // Send via SignalR with error handling
-                await SendSignalRMessageSafe("FaceRecognitionEvent", faceEvent);
+                await SendSignalRMessageSafe("FaceRecognition", "FaceRecognitionEvent", faceEvent);
 
                 // Log attendance if similarity is high enough
                 if (faceEvent.Similarity > 80 && faceEvent.CandidateInfo != null)
@@ -286,11 +304,11 @@ namespace IntelligentAttendanceSystem.Services
                 _logger.LogError(ex, "Error processing face recognition event");
             }
         }
-        private async Task SendSignalRMessageSafe(string method, object message)
+        private async Task SendSignalRMessageSafe(string group, string method, object message)
         {
             try
             {
-                await _hubContext.Clients.Group("FaceRecognition").SendAsync(method, message);
+                await _hubContext.Clients.Group(group).SendAsync(method, message);
             }
             catch (Exception ex)
             {
@@ -421,15 +439,52 @@ namespace IntelligentAttendanceSystem.Services
         {
             try
             {
+                if (pBuffer == IntPtr.Zero || length == 0 || offset >= uint.MaxValue - length)
+                {
+                    _logger.LogWarning($"Invalid buffer parameters - Offset: {offset}, Length: {length}, Buffer: {pBuffer}");
+                    return null;
+                }
+
                 byte[] imageData = new byte[length];
                 Marshal.Copy(IntPtr.Add(pBuffer, (int)offset), imageData, 0, (int)length);
-                return Convert.ToBase64String(imageData);
+
+                // Validate that it's actually image data
+                if (IsValidImageData(imageData))
+                {
+                    return Convert.ToBase64String(imageData);
+                }
+                else
+                {
+                    _logger.LogWarning("Extracted data doesn't appear to be valid image data");
+                    return null;
+                }
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error extracting image from buffer");
+                _logger.LogError(ex, $"Error extracting image from buffer at offset {offset}, length {length}");
                 return null;
             }
+        }
+
+        private bool IsValidImageData(byte[] data)
+        {
+            if (data == null || data.Length < 8)
+                return false;
+
+            // Check for common image file signatures
+            // JPEG: FF D8 FF
+            if (data[0] == 0xFF && data[1] == 0xD8 && data[2] == 0xFF)
+                return true;
+
+            // PNG: 89 50 4E 47
+            if (data[0] == 0x89 && data[1] == 0x50 && data[2] == 0x4E && data[3] == 0x47)
+                return true;
+
+            // BMP: 42 4D
+            if (data[0] == 0x42 && data[1] == 0x4D)
+                return true;
+
+            return false;
         }
 
         private FaceAttributes ExtractFaceAttributes(NET_FACE_DATA faceData)
@@ -497,34 +552,95 @@ namespace IntelligentAttendanceSystem.Services
             return beard.ToString().Replace("_", " ");
         }
         #region Trafic Count
-        private void ProcessTrafficJunctionEvent(IntPtr pEventInfo, IntPtr pBuffer, uint dwBufSize)
+        private async void ProcessTrafficJunctionEvent(IntPtr pEventInfo, IntPtr pBuffer, uint dwBufSize)
         {
             try
             {
                 // Parse the event information structure
-                var eventInfo = Marshal.PtrToStructure<DH_EVENT_TRAFFICJUNCTION>(pEventInfo);
+                NET_DEV_EVENT_TRAFFICJUNCTION_INFO info = (NET_DEV_EVENT_TRAFFICJUNCTION_INFO)Marshal.PtrToStructure(
+                    pEventInfo, typeof(NET_DEV_EVENT_TRAFFICJUNCTION_INFO));
 
-                _logger.LogInformation($"Traffic Junction Event - " +
-                                      $"Time: {eventInfo.UTC.wYear.ToString()}" +
-                                      $"-{eventInfo.UTC.wMonth.ToString()}-{eventInfo.UTC.wDay.ToString()}," +
-                                      $" {eventInfo.UTC.wHour.ToString()}:{eventInfo.UTC.wMinute.ToString()}" +
-                                      $":{eventInfo.UTC.wSecond.ToString()}" +
-                                      $"Object Type: {eventInfo.stTrafficCar.emObjectType}, " +
-                                      $"Vehicle Type: {eventInfo.stTrafficCar.emVehicleType}, " +
-                                      $"Speed: {eventInfo.stTrafficCar.fSpeed} km/h, " +
-                                      $"Direction: {eventInfo.stTrafficCar.emDirect}");
+                // Extract vehicle information from stuObject
+                var vehicleType = GetVehicleTypeFromObject(info.stuObject);
+                var direction = ParseDirection(info.byDirection);
+                var plateNumber = GetPlateNumber(info);
+                var speed = info.nSpeed;
+                var junctionId = info.nChannelID;
+                var confidence = info.stuObject.nConfidence;
+                var vehicleSize = CalculateVehicleSize(info.stuObject.BoundingBox);
 
+                using var scope = _serviceScopeFactory.CreateScope();
+                var _vehicleCountingService = scope.ServiceProvider.GetRequiredService<IVehicleCountingService>();
                 // Count vehicles based on type and direction
-                CountVehicle(eventInfo.stTrafficCar.emVehicleType, eventInfo.stTrafficCar.emDirect);
+                await _vehicleCountingService.CountVehicleAsync(
+                    junctionId,
+                    vehicleType,
+                    direction,
+                    vehicleSize,
+                    plateNumber,
+                    speed,
+                    confidence);
 
-                // Process image data if available
-                if (pBuffer != IntPtr.Zero && dwBufSize > 0)
+                // Create event info for notification
+                var eventInfo = new VehicleDetectionEvent
                 {
-                    ProcessVehicleImage(pBuffer, dwBufSize, eventInfo);
+                    EventId = $"{info.nChannelID}_{info.nEventID}_{info.UTC.ToDateTime():yyyyMMddHHmmss}",
+                    EventTime = info.UTC.ToDateTime(),
+                    JunctionId = junctionId,
+                    VehicleType = vehicleType,
+                    Direction = direction,
+                    VehicleSize = vehicleSize,
+                    PlateNumber = plateNumber,
+                    Speed = speed,
+                    Confidence = confidence,
+                    ObjectId = info.stuObject.nObjectID,
+                    BoundingBox = ExtractBoundingBox(info.stuObject.BoundingBox)
+                };
+
+
+                // Process the traffic event (your existing code)
+                var trafficEvent = new TrafficJunctionEvent
+                {
+                    EventId = eventInfo.EventId,
+                    EventTime = eventInfo.EventTime,
+                    VehicleInfo = ExtractVehicleInfo(info),
+                    EventNumber = Interlocked.Increment(ref _eventCounter),
+                    ChannelId = junctionId,
+                    EventAction = info.bEventAction == 1 ? "Start" : "Stop"
+                };
+                // Extract images using available fields
+                if (IntPtr.Zero != pBuffer && dwBufSize > 0)
+                {
+                    // Extract scene image if available
+                    if (info.bSceneImage && info.stuSceneImage.nLength > 0)
+                    {
+                        trafficEvent.GlobalImageBase64 = ExtractImageFromBuffer(
+                            pBuffer, info.stuSceneImage.nOffSet, info.stuSceneImage.nLength);
+                    }
+
+                    // Extract object image if available (from stuObject)
+                    if (info.stuObject.bPicEnble == 1 && info.stuObject.stPicInfo.dwFileLenth > 0)
+                    {
+                        trafficEvent.VehicleInfo.VehicleImageBase64 = ExtractImageFromBuffer(
+                            pBuffer, info.stuObject.stPicInfo.dwOffSet, info.stuObject.stPicInfo.dwFileLenth);
+                    }
+
+                    // Try to extract plate image if available
+                    // Note: You might need to check if plate image info is available in your SDK
+                    trafficEvent.VehicleInfo.PlateImageBase64 = ExtractPlateImage(info, pBuffer, dwBufSize);
                 }
 
-                // You can also raise an event or update UI here
-                OnVehicleDetected?.Invoke(this, eventInfo);
+                // Send via SignalR
+                await SendSignalRMessageSafe("TrafficMonitoring", "TrafficJunctionEvent", trafficEvent);
+
+                await SendVehicleDetection(eventInfo);
+                // Also send vehicle count update
+                await SendVehicleCountUpdate(junctionId);
+
+                // Log to database
+                _ = Task.Run(() => LogTrafficEventAsync(trafficEvent));
+
+                _logger.LogInformation($"Traffic junction event processed: {vehicleType} (Confidence: {confidence}%) moving {direction} at junction {junctionId}");
 
             }
             catch (Exception ex)
@@ -532,37 +648,157 @@ namespace IntelligentAttendanceSystem.Services
                 _logger.LogError(ex, "Error processing traffic junction event");
             }
         }
-        #region Vehicle Counting Logic
-        public event EventHandler<DH_EVENT_TRAFFICJUNCTION> OnVehicleDetected;
-        private readonly Dictionary<EM_VEHICLE_TYPE, int> _vehicleCounts = new Dictionary<EM_VEHICLE_TYPE, int>();
-        private readonly object _countLock = new object();
-
-        private void CountVehicle(EM_VEHICLE_TYPE vehicleType, EM_DIRECTION direction)
+        private async Task LogTrafficEventAsync(TrafficJunctionEvent trafficEvent)
         {
-            lock (_countLock)
+            try
             {
-                if (!_vehicleCounts.ContainsKey(vehicleType))
-                {
-                    _vehicleCounts[vehicleType] = 0;
-                }
-                _vehicleCounts[vehicleType]++;
+                using var scope = _serviceScopeFactory.CreateScope();
+                var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
 
-                _logger.LogInformation($"Vehicle counted - Type: {vehicleType}, " +
-                                      $"Direction: {direction}, " +
-                                      $"Total {vehicleType}s: {_vehicleCounts[vehicleType]}");
+                var trafficRecord = new TrafficRecord()
+                {
+                    EventId = trafficEvent.EventId,
+                    VehicleType = trafficEvent.VehicleInfo.VehicleType,
+                    PlateNumber = trafficEvent.VehicleInfo.PlateNumber,
+                    Color = trafficEvent.VehicleInfo.Color,
+                    Speed = trafficEvent.VehicleInfo.Speed,
+                    ViolationType = "",// trafficEvent.ViolationInfo != null ? trafficEvent.ViolationInfo.ViolationType : "",
+                    ViolationDescription = "",// trafficEvent.ViolationInfo != null ? trafficEvent.ViolationInfo.Description : "",
+                    Confidence = 0,// trafficEvent.ViolationInfo?.Confidence,
+                    JunctionId = trafficEvent.JunctionInfo != null ? trafficEvent.JunctionInfo.JunctionId : "",
+                    LaneNumber = "",//trafficEvent.ViolationInfo != null ? trafficEvent.ViolationInfo.LaneNumber : "",
+                    EventTime = trafficEvent.EventTime,
+                    GlobalImageBase64 = trafficEvent.GlobalImageBase64 != null ? trafficEvent.GlobalImageBase64 : "",
+                    VehicleImageBase64 = trafficEvent.VehicleInfo != null ? trafficEvent.VehicleInfo.VehicleImageBase64 != null ?
+                    trafficEvent.VehicleInfo.VehicleImageBase64 : "" : "",
+                    PlateImageBase64 = trafficEvent.VehicleInfo != null ? trafficEvent.VehicleInfo.PlateImageBase64 != null ?
+                    trafficEvent.VehicleInfo.PlateImageBase64 : "" : "",
+                    CreatedDate = DateTime.UtcNow
+                };
+
+                context.trafficRecords.Add(trafficRecord);
+                await context.SaveChangesAsync();
+
+                _logger.LogInformation($"Traffic violation logged: {trafficEvent.VehicleInfo.PlateNumber} - {(trafficEvent.ViolationInfo == null ? "" : trafficEvent.ViolationInfo.ViolationType)}");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error logging traffic event to database");
             }
         }
-
-        public Dictionary<EM_VEHICLE_TYPE, int> GetVehicleCounts()
+        #region Vehicle Counting Logic
+        private async Task SendVehicleCountUpdate(int junctionId)
         {
-            lock (_countLock)
+            try
             {
-                return new Dictionary<EM_VEHICLE_TYPE, int>(_vehicleCounts);
+                using var scope = _serviceScopeFactory.CreateScope();
+                var _vehicleCountingService = scope.ServiceProvider.GetRequiredService<IVehicleCountingService>();
+                var today = DateTime.Today;
+                var stats = await _vehicleCountingService.GetCountingStatsAsync(today, DateTime.Now, junctionId);
+
+                var countUpdate = new
+                {
+                    JunctionId = junctionId,
+                    TotalToday = stats.TotalVehicles,
+                    VehicleTypeCounts = stats.VehicleTypeCounts,
+                    DirectionCounts = stats.DirectionCounts,
+                    TypeDirectionMatrix = stats.TypeDirectionMatrix,
+                    LastUpdate = DateTime.Now,
+                    HourlyStats = await GetCurrentHourStats(junctionId)
+                };
+
+                await _hubContext.Clients.Group("TrafficMonitoring").SendAsync("VehicleCountUpdate", countUpdate);
+
+                _logger.LogDebug($"Sent VehicleCountUpdate for junction {junctionId}");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error sending vehicle count update");
+            }
+        }
+        // Add this method to send individual vehicle detections
+        private async Task SendVehicleDetection(VehicleDetectionEvent vehicleEvent)
+        {
+            try
+            {
+                var detectionData = new
+                {
+                    vehicleEvent.EventId,
+                    vehicleEvent.EventTime,
+                    vehicleEvent.JunctionId,
+                    vehicleEvent.VehicleType,
+                    vehicleEvent.Direction,
+                    vehicleEvent.VehicleSize,
+                    vehicleEvent.PlateNumber,
+                    vehicleEvent.Speed,
+                    vehicleEvent.Confidence,
+                    vehicleEvent.ConfidenceLevel,
+                    vehicleEvent.ObjectId,
+                    vehicleEvent.BoundingBox,
+                    Timestamp = DateTime.Now
+                };
+
+                await _hubContext.Clients.Group("TrafficMonitoring").SendAsync("VehicleDetected", vehicleEvent);
+
+                _logger.LogDebug($"Sent VehicleDetected: {vehicleEvent.VehicleType} moving {vehicleEvent.Direction}");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error sending vehicle detection");
+            }
+        }
+        // In FaceRecognitionService - Update the OnVehicleCountingDetected method
+        private void OnVehicleCountingDetected(object sender, VehicleDetectionEvent e)
+        {
+            // Handle vehicle detection events
+            _logger.LogInformation($"Vehicle counted: {e.VehicleType} moving {e.Direction} at junction {e.JunctionId}");
+
+            // Send real-time update via SignalR
+            _ = Task.Run(async () =>
+            {
+                try
+                {
+                    await SendVehicleDetection(e);
+
+                    // Also update the counts
+                    await SendVehicleCountUpdate(e.JunctionId);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Error sending vehicle detection via SignalR");
+                }
+            });
+        }
+        private async Task<object> GetCurrentHourStats(int junctionId)
+        {
+            try
+            {
+                var currentHour = DateTime.Now.Hour;
+                var today = DateTime.Today;
+                var hourStart = today.AddHours(currentHour);
+                var hourEnd = hourStart.AddHours(1).AddSeconds(-1);
+
+                using var scope = _serviceScopeFactory.CreateScope();
+                var _vehicleCountingService = scope.ServiceProvider.GetRequiredService<IVehicleCountingService>();
+                var stats = await _vehicleCountingService.GetCountingStatsAsync(hourStart, hourEnd, junctionId);
+
+                return new
+                {
+                    Hour = currentHour,
+                    Total = stats.TotalVehicles,
+                    ByType = stats.VehicleTypeCounts,
+                    ByDirection = stats.DirectionCounts
+                };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting current hour stats");
+                return new { Hour = DateTime.Now.Hour, Total = 0, ByType = new object(), ByDirection = new object() };
             }
         }
         #endregion
         #region TC Image Process
-        private void ProcessVehicleImage(IntPtr pBuffer, uint dwBufSize, DH_EVENT_TRAFFICJUNCTION eventInfo)
+        private void ProcessVehicleImage(IntPtr pBuffer, uint dwBufSize, NET_DEV_EVENT_TRAFFICJUNCTION_INFO eventInfo)
         {
             try
             {
@@ -571,7 +807,7 @@ namespace IntelligentAttendanceSystem.Services
                 Marshal.Copy(pBuffer, imageData, 0, (int)dwBufSize);
 
                 // Save image or process further
-                string fileName = $"Vehicle_{eventInfo.stTrafficCar.emVehicleType}_{DateTime.Now:yyyyMMddHHmmssfff}.jpg";
+                string fileName = $"Vehicle_{eventInfo.stTrafficCar.nVehicleSize}_{DateTime.Now:yyyyMMddHHmmssfff}.jpg";
                 File.WriteAllBytes(fileName, imageData);
 
                 _logger.LogInformation($"Vehicle image saved: {fileName}");
@@ -580,6 +816,347 @@ namespace IntelligentAttendanceSystem.Services
             {
                 _logger.LogError(ex, "Error processing vehicle image");
             }
+        }
+        private string ExtractPlateImage(NET_DEV_EVENT_TRAFFICJUNCTION_INFO info, IntPtr pBuffer, uint dwBufSize)
+        {
+            try
+            {
+                // Method 1: Check if there's a dedicated plate image in the structure
+                // This depends on your specific SDK version and configuration
+
+                // Method 2: Use the object image as plate image if it contains the plate
+                if (info.stuObject.bPicEnble == 1 && info.stuObject.stPicInfo.dwFileLenth > 0)
+                {
+                    // You might want to create a cropped version showing just the plate
+                    // For now, return the object image as it likely contains the vehicle with plate
+                    return ExtractImageFromBuffer(
+                        pBuffer, info.stuObject.stPicInfo.dwOffSet, info.stuObject.stPicInfo.dwFileLenth);
+                }
+
+                // Method 3: Check if there are additional objects that might contain plate images
+                if (info.pstObjects != IntPtr.Zero && info.nObjectNum > 0)
+                {
+                    // There might be multiple objects, one of which could be the license plate
+                    return ExtractPlateFromMultipleObjects(info, pBuffer, dwBufSize);
+                }
+
+                return null;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Error extracting plate image");
+                return null;
+            }
+        }
+        private string ExtractPlateFromMultipleObjects(NET_DEV_EVENT_TRAFFICJUNCTION_INFO info, IntPtr pBuffer, uint dwBufSize)
+        {
+            try
+            {
+                int objectSize = Marshal.SizeOf(typeof(NET_MSG_OBJECT));
+
+                for (int i = 0; i < info.nObjectNum; i++)
+                {
+                    IntPtr objectPtr = IntPtr.Add(info.pstObjects, i * objectSize);
+                    NET_MSG_OBJECT obj = (NET_MSG_OBJECT)Marshal.PtrToStructure(objectPtr, typeof(NET_MSG_OBJECT));
+
+                    // Check if this object might be a license plate
+                    string objectType = GetStringFromByteArray(obj.szObjectType);
+                    if (objectType.Contains("plate", StringComparison.OrdinalIgnoreCase) ||
+                        objectType.Contains("license", StringComparison.OrdinalIgnoreCase))
+                    {
+                        if (obj.bPicEnble == 1 && obj.stPicInfo.dwFileLenth > 0)
+                        {
+                            return ExtractImageFromBuffer(pBuffer, obj.stPicInfo.dwOffSet, obj.stPicInfo.dwFileLenth);
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Error extracting plate from multiple objects");
+            }
+
+            return null;
+        }
+        #endregion
+        #region Extraction Method
+
+        private string GetPlateNumber(NET_DEV_EVENT_TRAFFICJUNCTION_INFO info)
+        {
+            // Get plate number from plate info
+            if (!string.IsNullOrEmpty(info.stuPlateInfo.szFrontPlateNumber))
+            {
+                string plate = info.stuPlateInfo.szFrontPlateNumber;
+                if (!string.IsNullOrEmpty(plate) && plate != "Unknown")
+                    return plate;
+            }
+            // Get plate number from plate info
+            if (!string.IsNullOrEmpty(info.stuPlateInfo.szBackPlateNumber))
+            {
+                string plate = info.stuPlateInfo.szFrontPlateNumber;
+                if (!string.IsNullOrEmpty(plate) && plate != "Unknown")
+                    return plate;
+            }
+
+            // Fallback to traffic car info
+            if (!string.IsNullOrEmpty(info.stTrafficCar.szPlateNumber))
+            {
+                string plate = info.stTrafficCar.szPlateNumber;
+                if (!string.IsNullOrEmpty(plate))
+                    return plate;
+            }
+
+            return "Unknown";
+        }
+        // New helper methods for extracting information from NET_MSG_OBJECT
+        private string GetVehicleTypeFromObject(NET_MSG_OBJECT stuObject)
+        {
+            // First try to get from object type string
+            if (stuObject.szObjectType != null && stuObject.szObjectType.Length > 0)
+            {
+                string objectType = GetStringFromByteArray(stuObject.szObjectType);
+                if (!string.IsNullOrEmpty(objectType) && objectType != "Unknown")
+                {
+                    return ParseObjectTypeFromString(objectType);
+                }
+            }
+
+            // Try object sub-type
+            if (stuObject.szObjectSubType != null && stuObject.szObjectSubType.Length > 0)
+            {
+                string subType = GetStringFromByteArray(stuObject.szObjectSubType);
+                if (!string.IsNullOrEmpty(subType))
+                {
+                    return subType;
+                }
+            }
+
+            // Fallback to text field
+            if (stuObject.szText != null && stuObject.szText.Length > 0)
+            {
+                string text = GetStringFromByteArray(stuObject.szText);
+                if (!string.IsNullOrEmpty(text))
+                {
+                    return ExtractVehicleTypeFromText(text);
+                }
+            }
+
+            return "Unknown";
+        }
+
+        private string ParseObjectTypeFromString(string objectType)
+        {
+            if (objectType.Contains("vehicle", StringComparison.OrdinalIgnoreCase) ||
+                objectType.Contains("car", StringComparison.OrdinalIgnoreCase))
+                return "Car";
+
+            if (objectType.Contains("truck", StringComparison.OrdinalIgnoreCase))
+                return "Truck";
+
+            if (objectType.Contains("bus", StringComparison.OrdinalIgnoreCase))
+                return "Bus";
+
+            if (objectType.Contains("motorcycle", StringComparison.OrdinalIgnoreCase) ||
+                objectType.Contains("motorbike", StringComparison.OrdinalIgnoreCase))
+                return "Motorcycle";
+
+            if (objectType.Contains("bicycle", StringComparison.OrdinalIgnoreCase) ||
+                objectType.Contains("bike", StringComparison.OrdinalIgnoreCase))
+                return "Bicycle";
+
+            if (objectType.Contains("person", StringComparison.OrdinalIgnoreCase) ||
+                objectType.Contains("pedestrian", StringComparison.OrdinalIgnoreCase))
+                return "Pedestrian";
+
+            return objectType;
+        }
+
+        private string ExtractVehicleTypeFromText(string text)
+        {
+            // Common patterns in license plate recognition or object detection
+            if (text.Contains("CAR") || text.Contains("car"))
+                return "Car";
+
+            if (text.Contains("TRUCK") || text.Contains("truck"))
+                return "Truck";
+
+            if (text.Contains("BUS") || text.Contains("bus"))
+                return "Bus";
+
+            if (text.Contains("MOTOR") || text.Contains("motor"))
+                return "Motorcycle";
+
+            if (text.Contains("BIKE") || text.Contains("bike"))
+                return "Bicycle";
+
+            return "Unknown";
+        }
+
+        private int CalculateVehicleSize(NET_RECT boundingBox)
+        {
+            // Calculate area of bounding box as a rough size indicator
+            int width = boundingBox.nRight - boundingBox.nLeft;
+            int height = boundingBox.nBottom - boundingBox.nTop;
+
+            if (width <= 0 || height <= 0)
+                return 0;
+
+            return width * height;
+        }
+
+        private Rect ExtractBoundingBox(NET_RECT netRect)
+        {
+            return new Rect
+            {
+                X = netRect.nLeft,
+                Y = netRect.nTop,
+                Width = netRect.nRight - netRect.nLeft,
+                Height = netRect.nBottom - netRect.nTop
+            };
+        }
+
+        private string GetStringFromByteArray(byte[] byteArray)
+        {
+            try
+            {
+                if (byteArray == null || byteArray.Length == 0)
+                    return string.Empty;
+
+                // Find the first null terminator
+                int length = Array.IndexOf(byteArray, (byte)0);
+                if (length < 0) length = byteArray.Length;
+
+                if (length > 0)
+                {
+                    return System.Text.Encoding.ASCII.GetString(byteArray, 0, length).Trim();
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Error converting byte array to string");
+            }
+
+            return string.Empty;
+        }
+
+        // Extract additional object attributes
+        private Dictionary<string, object> ExtractObjectAttributes(NET_MSG_OBJECT stuObject)
+        {
+            var attributes = new Dictionary<string, object>();
+
+            try
+            {
+                attributes["ObjectID"] = stuObject.nObjectID;
+                attributes["Confidence"] = stuObject.nConfidence;
+                attributes["Action"] = stuObject.nAction;
+
+                // Bounding box info
+                attributes["BoundingBox"] = new
+                {
+                    Left = stuObject.BoundingBox.nLeft,
+                    Top = stuObject.BoundingBox.nTop,
+                    Right = stuObject.BoundingBox.nRight,
+                    Bottom = stuObject.BoundingBox.nBottom,
+                    Width = stuObject.BoundingBox.nRight - stuObject.BoundingBox.nLeft,
+                    Height = stuObject.BoundingBox.nBottom - stuObject.BoundingBox.nTop
+                };
+
+                // Center point
+                attributes["Center"] = new
+                {
+                    X = stuObject.Center.nx,
+                    Y = stuObject.Center.ny
+                };
+
+                // Object type and text
+                attributes["ObjectType"] = GetStringFromByteArray(stuObject.szObjectType);
+                attributes["ObjectSubType"] = GetStringFromByteArray(stuObject.szObjectSubType);
+                attributes["Text"] = GetStringFromByteArray(stuObject.szText);
+                attributes["SubText"] = GetStringFromByteArray(stuObject.szSubText);
+
+                // Color information
+                attributes["MainColor"] = $"#{stuObject.rgbaMainColor:X8}";
+                attributes["HasImage"] = stuObject.bPicEnble == 1;
+                attributes["IsShotFrame"] = stuObject.bShotFrame == 1;
+                attributes["HasColor"] = stuObject.bColor == 1;
+
+                // Timing information
+                attributes["CurrentTime"] = stuObject.stuCurrentTime.ToDateTime();
+                attributes["StartTime"] = stuObject.stuStartTime.ToDateTime();
+                attributes["EndTime"] = stuObject.stuEndTime.ToDateTime();
+
+                // Sequence information
+                attributes["CurrentSequence"] = stuObject.dwCurrentSequence;
+                attributes["BeginSequence"] = stuObject.dwBeginSequence;
+                attributes["EndSequence"] = stuObject.dwEndSequence;
+
+                // Additional identifiers
+                attributes["RelativeID"] = stuObject.nRelativeID;
+                attributes["SubBrand"] = stuObject.wSubBrand;
+                attributes["BrandYear"] = stuObject.wBrandYear;
+
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error extracting object attributes");
+            }
+
+            return attributes;
+        }
+        private string ParseDirection(byte byDirection)
+        {
+            return byDirection switch
+            {
+                0 => "Left",
+                1 => "Right",
+                2 => "Straight",
+                3 => "Left Turn",
+                4 => "Right Turn",
+                5 => "U-Turn",
+                _ => "Unknown"
+            };
+        }
+        private string ParseVehiclePosture(EM_VEHICLE_POSTURE_TYPE posture)
+        {
+            return posture switch
+            {
+                EM_VEHICLE_POSTURE_TYPE.VEHICLE_HEAD => "Head",
+                EM_VEHICLE_POSTURE_TYPE.VEHICLE_SIDE => "Side",
+                EM_VEHICLE_POSTURE_TYPE.VEHICLE_TAIL => "Tail",
+                _ => "Unknown"
+            };
+        }
+
+        private TrafficVehicleInfo ExtractVehicleInfo(NET_DEV_EVENT_TRAFFICJUNCTION_INFO info)
+        {
+            var vehicleInfo = new TrafficVehicleInfo
+            {
+                PlateNumber = GetPlateNumber(info),
+                VehicleType = GetVehicleTypeFromObject(info.stuObject), // Use the new method
+                Color = GetVehicleColor(info),
+                Speed = info.nSpeed,
+                Direction = ParseDirection(info.byDirection),
+                VehicleRect = ExtractBoundingBox(info.stuObject.BoundingBox),
+                DriverSeatBelt = info.byMainSeatBelt == 1,
+                PassengerSeatBelt = info.bySlaveSeatBelt == 1,
+                VehiclePosture = ParseVehiclePosture(info.emVehiclePosture),
+                VehicleSignConfidence = info.nVehicleSignConfidence,
+                VehicleCategoryConfidence = info.nVehicleCategoryConfidence,
+                ObjectConfidence = info.stuObject.nConfidence,
+                ObjectAttributes = ExtractObjectAttributes(info.stuObject) // Add object attributes
+            };
+
+            return vehicleInfo;
+        }
+        private string GetVehicleColor(NET_DEV_EVENT_TRAFFICJUNCTION_INFO info)
+        {
+            // Try to get from traffic car info
+            if (!string.IsNullOrEmpty(info.stTrafficCar.szVehicleColor))
+            {
+                return info.stTrafficCar.szVehicleColor;
+            }
+
+            return "Unknown";
         }
         #endregion
         #endregion
