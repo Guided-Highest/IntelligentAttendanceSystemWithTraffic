@@ -37,11 +37,11 @@ namespace IntelligentAttendanceSystem.Controllers
         }
 
         [HttpPost]
-        public async Task<JsonResult> StartRecognition([FromBody] int channel = 0)
+        public async Task<JsonResult> StartRecognition([FromBody] ChannelRequest request)
         {
             try
             {
-                bool isrunning = _faceRecognitionService.IsChannelRunning(channel);
+                bool isrunning = _faceRecognitionService.IsChannelRunning(request.Channel);
                 if (isrunning)
                 {
                     return Json(new
@@ -50,32 +50,35 @@ namespace IntelligentAttendanceSystem.Controllers
                         message = isrunning ? "Face recognition started" : "Failed to start face recognition"
                     });
                 }
-                bool success = await _faceRecognitionService.StartFaceRecognitionAsync(channel);
-                return Json(new { success, message = success ? $"Face recognition started on channel {channel}" : $"Failed to start face recognition on channel {channel}" });
+                bool success = await _faceRecognitionService.StartFaceRecognitionAsync(request.Channel);
+                return Json(new { success, message = success ? $"Face recognition started on channel {request.Channel}" : $"Failed to start face recognition on channel {request.Channel}" });
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, $"Error starting face recognition on channel {channel}");
+                _logger.LogError(ex, $"Error starting face recognition on channel {request.Channel}");
                 return Json(new { success = false, message = ex.Message });
             }
         }
-
+        public class ChannelRequest
+        {
+            public int Channel { get; set; }
+        }
         [HttpPost]
-        public async Task<JsonResult> StopRecognition([FromBody] int channel = 0)
+        public async Task<JsonResult> StopRecognition([FromBody] ChannelRequest request)
         {
             try
             {
-                bool success = await _faceRecognitionService.StopFaceRecognitionAsync(channel);
+                bool success = await _faceRecognitionService.StopFaceRecognitionAsync(request.Channel);
                 return Json(new
                 {
                     success,
-                    message = success ? $"Face recognition stopped on channel {channel}" :
-                    $"Failed to stop face recognition on channel {channel}"
+                    message = success ? $"Face recognition stopped on channel {request.Channel}" :
+                    $"Failed to stop face recognition on channel {request.Channel}"
                 });
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, $"Error stopping face recognition on channel {channel}");
+                _logger.LogError(ex, $"Error stopping face recognition on channel {request.Channel}");
                 return Json(new { success = false, message = ex.Message });
             }
         }
