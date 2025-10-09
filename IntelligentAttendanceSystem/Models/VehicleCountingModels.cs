@@ -37,5 +37,6 @@
         public int ObjectId { get; set; }
         public Rect BoundingBox { get; set; }
         public Dictionary<string, object> ObjectAttributes { get; set; } = new();
+        public int SourceChannel { get; set; }
     }
 }

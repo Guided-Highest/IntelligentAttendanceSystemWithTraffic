@@ -25,6 +25,7 @@ namespace IntelligentAttendanceSystem.Services
         public IntPtr LoginID => m_LoginID;
         public NET_DEVICEINFO_Ex DeviceInfo { get; private set; }
         public bool IsDeviceConnected { get; private set; }
+        public DateTime DeviceConnectedDT { get; private set; }
         public string DeviceIP { get; private set; }
 
         public event Action DeviceDisconnected;
@@ -150,6 +151,7 @@ namespace IntelligentAttendanceSystem.Services
                     this.DeviceInfo = deviceInfoLocal;
                     this.DeviceIP = credentials.IPAddress;
                     this.IsDeviceConnected = true;
+                    this.DeviceConnectedDT = DateTime.Now;
 
                     _logger.LogInformation($"Successfully logged into Dahua device at {credentials.IPAddress}");
                     _logger.LogInformation($"Login ID: {m_LoginID}, Device Channels: {deviceInfoLocal.nChanNum}");
@@ -318,7 +320,20 @@ namespace IntelligentAttendanceSystem.Services
                 LoginID = this.LoginID,
                 DeviceIP = this.DeviceIP,
                 DeviceInfo = this.DeviceInfo,
-                LastConnected = DateTime.Now
+                LastConnected = this.DeviceConnectedDT,
+                StatusMessage = this.IsInitialized ? "Initialized" : this.InitializationError ?? "Not Initialized"
+            };
+        }
+
+        public async Task<Object> GetDeviceStatusObject()
+        {
+            return new
+            {
+                IsConnected = this.IsDeviceConnected,
+                this.DeviceIP,
+                LastConnected = this.DeviceConnectedDT,
+                StatusMessage = this.IsInitialized ? "Initialized" : this.InitializationError ?? "Not Initialized",
+                Error = this.InitializationException?.Message
             };
         }
 

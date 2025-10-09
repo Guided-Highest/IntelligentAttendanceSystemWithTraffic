@@ -3,7 +3,108 @@
     ViewData["Title"] = "Face Recognition";
     Layout = "_Layout";
 }
+<style>
+    .channel-card {
+        transition: all 0.3s ease;
+        border: 2px solid #dee2e6;
+    }
 
+        .channel-card.running {
+            border-color: #198754;
+            background-color: rgba(25, 135, 84, 0.05);
+        }
+
+        .channel-card.stopped {
+            border-color: #dc3545;
+            background-color: rgba(220, 53, 69, 0.05);
+        }
+
+        .channel-card .card-header {
+            font-weight: bold;
+        }
+
+    .status-indicator {
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        display: inline-block;
+        margin-right: 8px;
+    }
+
+    .status-running {
+        background-color: #198754;
+    }
+
+    .status-stopped {
+        background-color: #dc3545;
+    }
+
+    .event-log-container {
+        height: 300px;
+        overflow-y: auto;
+        border: 1px solid #dee2e6;
+        border-radius: 0.375rem;
+        padding: 1rem;
+        background-color: #f8f9fa;
+        font-family: 'Courier New', monospace;
+        font-size: 0.875rem;
+    }
+
+    .event-log-item {
+        padding: 0.25rem 0;
+        border-bottom: 1px solid #e9ecef;
+    }
+
+        .event-log-item:last-child {
+            border-bottom: none;
+        }
+
+    .event-log-time {
+        color: #6c757d;
+        font-weight: bold;
+        margin-right: 0.5rem;
+    }
+
+    .event-log-message {
+        color: #212529;
+    }
+
+    .btn-channel {
+        min-width: 80px;
+    }
+
+    .channel-stats {
+        font-size: 0.875rem;
+    }
+
+        .channel-stats .stat-item {
+            padding: 2px 0;
+            border-bottom: 1px solid #f8f9fa;
+        }
+
+            .channel-stats .stat-item:last-child {
+                border-bottom: none;
+            }
+
+    .bi-arrow-clockwise.spin {
+        animation: spin 1s linear infinite;
+    }
+
+    .card-footer {
+        background-color: rgba(0, 0, 0, 0.03);
+        font-size: 0.75rem;
+    }
+
+    @@keyframes spin {
+        from {
+            transform: rotate(0deg);
+        }
+
+        to {
+            transform: rotate(360deg);
+        }
+    }
+</style>
 <div class="container-fluid">
     <div class="row">
         <div class="col-12">
@@ -12,6 +113,74 @@
                     <h4 class="mb-0"><i class="fas fa-user-circle"></i> Real-time Face Recognition</h4>
                 </div>
                 <div class="card-body">
+                    <!-- Channel Controls -->
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h5 class="card-title mb-0">Channel Controls</h5>
+                                </div>
+                                <div class="card-body">
+                                    <div class="row mb-3">
+                                        <div class="col-md-8">
+                                            <label for="channelSelect" class="form-label">Select Channel:</label>
+                                            <select class="form-select" id="channelSelect">
+                                                @for (int i = 0; i < Model.chnl; i++)
+                                                {
+                                                    <option value="@i">Channel @(i + 1)</option>
+                                                }
+                                            </select>
+                                        </div>
+                                        <div class="col-md-4 d-flex align-items-end">
+                                            <button type="button" class="btn btn-primary w-100" onclick="startSelectedChannel()">
+                                                Start Selected
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div class="row">
+                                        <div class="col-6">
+                                            <button type="button" class="btn btn-success w-100" onclick="startAllChannels()">
+                                                Start All Channels
+                                            </button>
+                                        </div>
+                                        <div class="col-6">
+                                            <button type="button" class="btn btn-danger w-100" onclick="stopAllChannels()">
+                                                Stop All Channels
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h5 class="card-title mb-0">System Status</h5>
+                                </div>
+                                <div class="card-body">
+                                    <div id="systemStatus">
+                                        <div class="d-flex justify-content-between align-items-center mb-2">
+                                            <span>Device Connection:</span>
+                                            <span id="deviceStatus" class="badge bg-secondary">Checking...</span>
+                                        </div>
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <span>Active Channels:</span>
+                                            <span id="activeChannelsCount" class="badge bg-info">0</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Channels Grid -->
+                    <div class="row" id="channelsGrid">
+                        <!-- Channel cards will be dynamically generated here -->
+                    </div>
+
+
+
                     <div class="row mb-4">
                         <div class="col-md-6">
                             @if (User.IsInRole("Admin"))
@@ -155,8 +324,11 @@
                     <div class="row mt-4">
                         <div class="col-12">
                             <div class="card">
-                                <div class="card-header">
+                                <div class="card-header d-flex justify-content-between align-items-center">
                                     <h5 class="card-title mb-0">Event Log</h5>
+                                    <button type="button" class="btn btn-sm btn-outline-secondary" onclick="clearEventLog()">
+                                        Clear Log
+                                    </button>
                                 </div>
                                 <div class="card-body">
                                     <div id="eventLog" style="max-height: 200px; overflow-y: auto;">
@@ -181,7 +353,7 @@
          let reconnectAttempts = 0;
          const maxReconnectAttempts = 5;
          let isManuallyDisconnected = false;
-
+         const CHANNELS = Array.from({ length: @(Model.chnl) }, (_, i) => i);
          // Initialize SignalR connection
         async function initializeSignalR() {
             if (isManuallyDisconnected) return;
@@ -229,6 +401,17 @@
                     updateTrafficJunctionUI(trafficEvent);
                     addEventLog(`Traffic violation: ${trafficEvent.vehicleInfo.plateNumber} - ${trafficEvent.violationInfo.violationType}`, 'warning');
                 });
+                    connection.on("VehicleDetected", (event) => {
+                        console.log(event);
+            // Update channel-specific event count
+            updateChannelEventCount(event.junctionId,
+                                  parseInt(document.getElementById(`event-count-${event.junctionId}`).textContent) + 1,
+                                  event.eventTime);
+
+            // Add to event log
+            addEventLog(`Channel ${event.junctionId}: ${event.vehicleType} detected moving ${event.direction}`);
+        });
+
 
 
                 connection.onreconnecting((error) => {
@@ -507,10 +690,13 @@
         const noGlobalImage = document.getElementById('noGlobalImage');
         const noFaceImage = document.getElementById('noFaceImage');
         const noCandidateImage = document.getElementById('noCandidateImage');
-        async function startRecog(){
-            const channel = parseInt(channelSelect.value);
+        async function startRecog(channel){
+            const _startBtn = document.querySelector(`#channel-${channel} .start-btn`);
+            const originalText = _startBtn.innerHTML;
 
             try {
+                _startBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status"></span> Starting...';
+                _startBtn.disabled = true;
                 const response = await fetch('/FaceRecognition/StartRecognition', {
                     method: 'POST',
                     headers: {
@@ -522,16 +708,59 @@
                 const result = await response.json();
 
                 if (result.success) {
-                    setRunningState(true);
-                    startStatusChecking();
-                    addEventLog('Face recognition started on channel ' + channel);
+                      await checkChannelStatus(channel);
+                    updateChannelState(channel, true);
+                    addEventLog(`Face recognition started on channel ${channel}`);
+                    updateActiveChannelsCount();
                 } else {
                     alert('Error: ' + result.message);
+                     await checkChannelStatus(channel);
                 }
             } catch (error) {
                 console.error('Error starting recognition:', error);
-                alert('Error starting face recognition');
+                alert('Error starting face recognition on channel ' + channel);
+                  await checkChannelStatus(channel);
+            } finally {
+                _startBtn.innerHTML = originalText;
+                _startBtn.disabled = false;
             }
+        }
+                async function stopRecog(channel) {
+                         const _stopBtn = document.querySelector(`#channel-${channel} .stop-btn`);
+                         const originalText = _stopBtn.innerHTML;
+            try {
+                 _stopBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status"></span> Stopping...';
+                 _stopBtn.disabled = true;
+                const response = await fetch('/FaceRecognition/StopRecognition', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ channel: channel })
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                      // Refresh the channel status to get updated stats
+                      await checkChannelStatus(channel);
+                    updateChannelState(channel, false);
+                    addEventLog(`Face recognition stopped on channel ${channel}`);
+                    updateActiveChannelsCount();
+                } else {
+                    alert('Error: ' + result.message);
+                    // Refresh status to ensure UI is correct
+                    await checkChannelStatus(channel);
+                }
+            } catch (error) {
+                console.error('Error stopping recognition:', error);
+                alert('Error stopping face recognition on channel ' + channel);
+                 // Refresh status to ensure UI is correct
+                 await checkChannelStatus(channel);
+                } finally {
+                    _stopBtn.innerHTML = originalText;
+                    _stopBtn.disabled = false;
+                }
         }
         // Start face recognition
         if(startBtn){
@@ -560,12 +789,178 @@
                 }
             });
             }
-        @if (Model.IsFRS.ToString().ToLower() == "true".ToLower())
-        {
-                        <text>
-                                                            startRecog();
-                                                    </text>
+
+                    // Start selected channel from dropdown
+        function startSelectedChannel() {
+            const channelSelect = document.getElementById('channelSelect');
+            const channel = parseInt(channelSelect.value);
+            startRecog(channel);
         }
+
+            // Start all channels
+        async function startAllChannels() {
+            for (const channel of CHANNELS) {
+                await startRecog(channel);
+                // Small delay between starting channels to avoid overwhelming the system
+                await new Promise(resolve => setTimeout(resolve, 500));
+            }
+        }
+
+        // Stop all channels
+        async function stopAllChannels() {
+            for (const channel of CHANNELS) {
+                await stopRecog(channel);
+                // Small delay between stopping channels
+                await new Promise(resolve => setTimeout(resolve, 500));
+            }
+        }
+
+                // Check status for a specific channel
+        async function checkChannelStatus(channel) {
+            try {
+                const response = await fetch(`/FaceRecognition/GetChannelStatus?channel=${channel}`);
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const result = await response.json();
+
+                if (result.success) {
+                    updateChannelState(channel, result.data.isRunning);
+                    updateChannelStats(result.data);
+                    return result.data;
+                } else {
+                    console.error(`Error getting status for channel ${channel}:`, result.error);
+                    return null;
+                }
+            } catch (error) {
+                console.error(`Error checking channel ${channel} status:`, error);
+                return null;
+            }
+        }
+
+        // Update channel statistics in the UI
+        function updateChannelStats(channelData) {
+            const eventCountElement = document.getElementById(`event-count-${channelData.channel}`);
+            const lastEventElement = document.getElementById(`last-event-${channelData.channel}`);
+
+            if (eventCountElement && channelData.eventCount !== undefined) {
+                eventCountElement.textContent = channelData.eventCount;
+            }
+
+            if (lastEventElement && channelData.lastActivity) {
+                const lastActivity = new Date(channelData.lastActivity);
+                lastEventElement.textContent = lastActivity.toLocaleTimeString();
+                lastEventElement.title = lastActivity.toLocaleString();
+            }
+
+            // Update start time if available
+            const startTimeElement = document.getElementById(`start-time-${channelData.channel}`);
+            if (startTimeElement && channelData.startTime) {
+                const startTime = new Date(channelData.startTime);
+                startTimeElement.textContent = startTime.toLocaleTimeString();
+                startTimeElement.title = startTime.toLocaleString();
+            }
+        }
+
+        // Update channel UI state
+        function updateChannelState(channel, isRunning) {
+            const channelElement = document.getElementById(`channel-${channel}`);
+            const statusIndicator = channelElement.querySelector('.status-indicator');
+            const statusBadge = channelElement.querySelector('.badge');
+            const startBtn = channelElement.querySelector('.start-btn');
+            const stopBtn = channelElement.querySelector('.stop-btn');
+            const statusText = channelElement.querySelector(`#channel-status-${channel}`);
+
+            if (isRunning) {
+                channelElement.classList.remove('stopped');
+                channelElement.classList.add('running');
+                statusIndicator.classList.remove('status-stopped');
+                statusIndicator.classList.add('status-running');
+                statusBadge.className = 'badge bg-success';
+                statusBadge.textContent = 'Running';
+                startBtn.disabled = true;
+                stopBtn.disabled = false;
+                statusText.textContent = 'Active';
+                statusText.className = 'fw-bold text-success';
+            } else {
+                channelElement.classList.remove('running');
+                channelElement.classList.add('stopped');
+                statusIndicator.classList.remove('status-running');
+                statusIndicator.classList.add('status-stopped');
+                statusBadge.className = 'badge bg-secondary';
+                statusBadge.textContent = 'Stopped';
+                startBtn.disabled = false;
+                stopBtn.disabled = true;
+                statusText.textContent = 'Inactive';
+                statusText.className = 'fw-bold text-secondary';
+            }
+        }
+                // Update event count for a channel
+        function updateChannelEventCount(channel, eventCount, lastEventTime) {
+            const eventCountElement = document.getElementById(`event-count-${channel}`);
+            const lastEventElement = document.getElementById(`last-event-${channel}`);
+
+            if (eventCountElement) {
+                eventCountElement.textContent = eventCount;
+            }
+
+            if (lastEventElement && lastEventTime) {
+                lastEventElement.textContent = new Date(lastEventTime).toLocaleTimeString();
+            }
+        }
+
+        // Check status of all channels periodically
+        async function checkAllChannelsStatus() {
+            try {
+                const response = await fetch('/FaceRecognition/GetRunningChannels');
+                const result = await response.json();
+
+                if (result.success) {
+                    // Update UI based on running channels
+                    CHANNELS.forEach(channel => {
+                        const isRunning = result.channels.includes(channel);
+                        updateChannelState(channel, isRunning);
+                    });
+                    updateActiveChannelsCount();
+                }
+            } catch (error) {
+                console.error('Error checking channels status:', error);
+            }
+        }
+
+        // Update active channels count
+        function updateActiveChannelsCount() {
+            const activeChannels = document.querySelectorAll('.channel-card.running').length;
+            document.getElementById('activeChannelsCount').textContent = activeChannels;
+        }
+
+        // Check device status
+        async function checkDeviceStatus() {
+            try {
+                // You'll need to implement this endpoint in your controller
+                const response = await fetch('/Device/Status');
+                const result = await response.json();
+
+                const deviceStatusElement = document.getElementById('deviceStatus');
+                if (result.isConnected) {
+                    deviceStatusElement.className = 'badge bg-success';
+                    deviceStatusElement.textContent = 'Connected';
+                } else {
+                    deviceStatusElement.className = 'badge bg-danger';
+                    deviceStatusElement.textContent = 'Disconnected';
+                }
+            } catch (error) {
+                console.error('Error checking device status:', error);
+                document.getElementById('deviceStatus').className = 'badge bg-warning';
+                document.getElementById('deviceStatus').textContent = 'Error';
+            }
+        }
+
+
+
+
             // Set running state UI
             function setRunningState(running) {
                 isRunning = running;
@@ -616,7 +1011,12 @@
 
             // Status checking
             function startStatusChecking() {
-                statusCheckInterval = setInterval(checkStatus, 2000);
+                //statusCheckInterval = setInterval(checkStatus, 2000);
+                statusCheckInterval = setInterval(() => {
+                          checkStatus();
+                          checkAllChannelsStatus();
+                          checkDeviceStatus();
+                      }, 5000);
             }
 
             function stopStatusChecking() {
@@ -644,6 +1044,7 @@
                  const eventLog = document.getElementById('eventLog');
                  const timestamp = new Date().toLocaleTimeString();
                  const logEntry = document.createElement('div');
+                 logEntry.className = 'event-log-item';
 
                  let bgClass = '';
                  switch (type) {
@@ -654,6 +1055,10 @@
                  }
 
                  logEntry.innerHTML = `<small class="${bgClass}">[${timestamp}] ${message}</small>`;
+                      logEntry.innerHTML += `<br>
+            <span class="event-log-time">[${timestamp}]</span>
+            <span class="event-log-message">${message}</span>
+        `;
 
                  if (eventLog.firstChild && eventLog.firstChild.className === 'text-muted') {
                      eventLog.innerHTML = '';
@@ -662,6 +1067,102 @@
                  eventLog.appendChild(logEntry);
                  eventLog.scrollTop = eventLog.scrollHeight;
              }
+                     function clearEventLog() {
+            document.getElementById('eventLog').innerHTML = '<div class="text-muted">No events yet...</div>';
+        }
+                     // Initialize the channels grid
+        function initializeChannelsGrid() {
+            const grid = document.getElementById('channelsGrid');
+            grid.innerHTML = '';
+
+            CHANNELS.forEach(channel => {
+                const channelCard = createChannelCard(channel);
+                grid.appendChild(channelCard);
+            });
+        }
+
+                // Create individual channel card with enhanced stats
+        function createChannelCard(channel) {
+            const col = document.createElement('div');
+            col.className = 'col-md-6 col-lg-4 mb-3';
+            col.innerHTML = `
+                <div class="card channel-card stopped" data-channel="${channel}" id="channel-${channel}">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <span>
+                            <span class="status-indicator status-stopped"></span>
+                            Channel ${channel}
+                        </span>
+                        <span class="badge bg-secondary">Stopped</span>
+                    </div>
+                    <div class="card-body">
+                        <div class="channel-stats mb-3">
+                            <div class="stat-item d-flex justify-content-between">
+                                <small class="text-muted">Status:</small>
+                                <span class="fw-bold" id="channel-status-${channel}">Inactive</span>
+                            </div>
+                            <div class="stat-item d-flex justify-content-between">
+                                <small class="text-muted">Events:</small>
+                                <span class="fw-bold" id="event-count-${channel}">0</span>
+                            </div>
+                            <div class="stat-item d-flex justify-content-between">
+                                <small class="text-muted">Last Event:</small>
+                                <span class="fw-bold" id="last-event-${channel}" title="Never">Never</span>
+                            </div>
+                            <div class="stat-item d-flex justify-content-between">
+                                <small class="text-muted">Uptime:</small>
+                                <span class="fw-bold" id="start-time-${channel}" title="Not started">-</span>
+                            </div>
+                        </div>
+                        <div class="btn-group w-100">
+                            <button type="button" class="btn btn-success btn-channel start-btn"
+                                    onclick="startRecog(${channel})" data-channel="${channel}">
+                                Start
+                            </button>
+                            <button type="button" class="btn btn-danger btn-channel stop-btn"
+                                    onclick="stopRecog(${channel})" data-channel="${channel}" disabled>
+                                Stop
+                            </button>
+                            <button type="button" class="btn btn-info btn-channel refresh-btn"
+                                    onclick="refreshChannelStatus(${channel})" data-channel="${channel}" title="Refresh Status">
+                                <i class="bi bi-arrow-clockwise"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="card-footer text-muted text-center">
+                        <small>Last checked: <span id="last-checked-${channel}">Never</span></small>
+                    </div>
+                </div>
+            `;
+            return col;
+        }
+
+        // Refresh individual channel status
+        async function refreshChannelStatus(channel) {
+            const refreshBtn = document.querySelector(`#channel-${channel} .refresh-btn`);
+            const originalHtml = refreshBtn.innerHTML;
+
+            // Add loading indicator
+            refreshBtn.innerHTML = '<i class="bi bi-arrow-clockwise spin"></i>';
+            refreshBtn.disabled = true;
+
+            try {
+                const status = await checkChannelStatus(channel);
+
+                // Update last checked timestamp
+                const lastCheckedElement = document.getElementById(`last-checked-${channel}`);
+                if (lastCheckedElement) {
+                    lastCheckedElement.textContent = new Date().toLocaleTimeString();
+                }
+
+                if (status) {
+                    addEventLog(`Refreshed status for channel ${channel}: ${status.isRunning ? 'Running' : 'Stopped'}`);
+                }
+            } finally {
+                // Restore button state
+                refreshBtn.innerHTML = originalHtml;
+                refreshBtn.disabled = false;
+            }
+        }
 
              // Initialize when page loads
              document.addEventListener('DOMContentLoaded', async function() {
@@ -669,6 +1170,12 @@
                 await initializeSignalR();
                 clearImages();
                 clearData();
+
+                // MC Start
+                     initializeChannelsGrid();
+                     startStatusChecking();
+                     checkDeviceStatus();
+                // MC End
 
                 // Add cleanup when leaving page
                 window.addEventListener('beforeunload', () => {

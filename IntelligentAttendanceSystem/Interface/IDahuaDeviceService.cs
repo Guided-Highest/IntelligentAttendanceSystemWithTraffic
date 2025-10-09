@@ -6,6 +6,8 @@ namespace IntelligentAttendanceSystem.Interface
 {
     public interface IDahuaDeviceService : IDisposable
     {
+        Task<DeviceStatus> GetDeviceStatusAsync();
+        Task<object> GetDeviceStatusObject();
         Task<bool> InitializeAndLoginAsync();
         Task<SystemDevice> GetDeviceCredentialsAsync();
         Task<bool> SaveDeviceCredentialsAsync(SystemDevice credentials);

@@ -2,6 +2,12 @@
 {
     public class FaceRecognitionModels
     {
+        public class ChannelRecognitionState
+        {
+            public IntPtr AnalyzerID { get; set; }
+            public bool IsRunning { get; set; }
+            public int Channel { get; set; }
+        }
         public class FaceRecognitionEvent
         {
             public string EventId { get; set; }

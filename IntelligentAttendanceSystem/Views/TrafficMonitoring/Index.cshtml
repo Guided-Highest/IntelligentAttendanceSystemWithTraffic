@@ -2,7 +2,29 @@
     ViewData["Title"] = "Traffic Monitoring Dashboard";
     Layout = "_Layout";
 }
-
+<style>
+    #map1 {
+        width: 100%;
+        height: 100vh;
+    }
+    /* Circle count marker */
+    .custom-marker div {
+        background: red;
+        color: white;
+        border-radius: 50%;
+        width: 55px;
+        height: 55px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 12px;
+        font-weight: bold;
+        border: 2px solid white;
+        box-shadow: 0 0 4px rgba(0,0,0,0.4);
+        text-align: center;
+        line-height: 1.2;
+    }
+</style>
 <div class="container-fluid">
     <div class="row">
         <div class="col-12">
@@ -136,7 +158,20 @@
                             </div>
                         </div>
                     </div>
-
+                    <div class="row mt-4">
+                        <div class="col-12">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h5 class="card-title mb-0">
+                                        <i class="fas fa-chart-bar"></i> Flow Map
+                                    </h5>
+                                </div>
+                                <div class="card-body">
+                                    <div id="map1"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                     <!-- Detailed Statistics -->
                     <div class="row mt-4">
                         <div class="col-12">
@@ -172,357 +207,527 @@
 </div>
 
 @section Scripts {
+
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+
+    <!-- TweenJS + Flowmap -->
+    <script src="https://unpkg.com/@@tweenjs/tween.js@18.6.4/dist/tween.umd.js"></script>
+    <script src="https://jwasilgeo.github.io/Leaflet.Canvas-Flowmap-Layer/src/CanvasFlowmapLayer.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/7.0.10/signalr.min.js"></script>
     <script>
-        let trafficConnection;
-        let detectionCounter = 0;
-        let vehicleStats = {
-            totalToday: 0,
-            currentHour: 0,
-            types: {},
-            directions: {}
-        };
+         let trafficConnection;
+         let detectionCounter = 0;
+         let vehicleStats = {
+             totalToday: 0,
+             currentHour: 0,
+             types: {},
+             directions: {}
+         };
+             // Global variables to manage map state
+         let map1, flowLayer, markers = [], pins = [];
+         let locations = {};
+         let odData = [];
 
-        // Initialize Traffic Monitoring SignalR connection
-        async function initializeTrafficMonitoring() {
-            try {
-                // Use the same hub connection for both face recognition and traffic monitoring
-                trafficConnection = new signalR.HubConnectionBuilder()
-                    .withUrl("/faceRecognitionHub")
-                    .withAutomaticReconnect()
-                    .configureLogging(signalR.LogLevel.Warning)
-                    .build();
 
-                // Traffic-specific event handlers
-                trafficConnection.on("TrafficConnectionStatus", (status) => {
-                    updateTrafficConnectionStatus(true);
-                    showTrafficToast(status.Message, 'success');
-                });
+         // Initialize Traffic Monitoring SignalR connection
+         async function initializeTrafficMonitoring() {
+             try {
+                 // Use the same hub connection for both face recognition and traffic monitoring
+                 trafficConnection = new signalR.HubConnectionBuilder()
+                     .withUrl("/faceRecognitionHub")
+                     .withAutomaticReconnect()
+                     .configureLogging(signalR.LogLevel.Warning)
+                     .build();
 
-                trafficConnection.on("VehicleCountUpdate", (countData) => {
-                    updateVehicleCounts(countData);
-                });
+                 // Traffic-specific event handlers
+                 trafficConnection.on("TrafficConnectionStatus", (status) => {
+                     updateTrafficConnectionStatus(true);
+                     showTrafficToast(status.Message, 'success');
+                 });
 
-                trafficConnection.on("VehicleDetected", (vehicleData) => {
-                    addVehicleDetection(vehicleData);
-                    updateDetectionCounter();
-                });
+                 trafficConnection.on("VehicleCountUpdate", (countData) => {
+                     updateVehicleCounts(countData);
+                 });
 
-                trafficConnection.onreconnecting(() => {
-                    updateTrafficConnectionStatus(false);
-                    showTrafficToast('Traffic connection lost. Reconnecting...', 'warning');
-                });
+                 trafficConnection.on("VehicleDetected", (vehicleData) => {
+                     addVehicleDetection(vehicleData);
+                     updateDetectionCounter(vehicleData.junctionId);
+                 });
 
-                trafficConnection.onreconnected(() => {
-                    updateTrafficConnectionStatus(true);
-                    showTrafficToast('Traffic connection restored', 'success');
-                    // Rejoin traffic monitoring group
-                    trafficConnection.invoke("JoinTrafficMonitoringGroup");
-                });
+                 trafficConnection.onreconnecting(() => {
+                     updateTrafficConnectionStatus(false);
+                     showTrafficToast('Traffic connection lost. Reconnecting...', 'warning');
+                 });
 
-                trafficConnection.onclose(() => {
-                    updateTrafficConnectionStatus(false);
-                    showTrafficToast('Traffic connection closed', 'danger');
-                });
+                 trafficConnection.onreconnected(() => {
+                     updateTrafficConnectionStatus(true);
+                     showTrafficToast('Traffic connection restored', 'success');
+                     // Rejoin traffic monitoring group
+                     trafficConnection.invoke("JoinTrafficMonitoringGroup");
+                 });
 
-                await trafficConnection.start();
-                await trafficConnection.invoke("JoinTrafficMonitoringGroup");
+                 trafficConnection.onclose(() => {
+                     updateTrafficConnectionStatus(false);
+                     showTrafficToast('Traffic connection closed', 'danger');
+                 });
 
-                console.log('Traffic monitoring connected successfully');
+                 await trafficConnection.start();
+                 await trafficConnection.invoke("JoinTrafficMonitoringGroup");
 
-            } catch (err) {
-                console.error('Traffic monitoring connection error:', err);
-                showTrafficToast('Failed to connect to traffic monitoring', 'danger');
-            }
-        }
+                 console.log('Traffic monitoring connected successfully');
 
-        // Update vehicle counts display
-        function updateVehicleCounts(countData) {
-            // Update main statistics
-            document.getElementById('totalVehiclesToday').textContent = countData.totalToday.toLocaleString();
-            document.getElementById('currentHourCount').textContent = countData.hourlyStats.total.toLocaleString();
-            document.getElementById('uniqueTypes').textContent = Object.keys(countData.vehicleTypeCounts).length;
+             } catch (err) {
+                 console.error('Traffic monitoring connection error:', err);
+                 showTrafficToast('Failed to connect to traffic monitoring', 'danger');
+             }
+         }
 
-            // Update vehicle stats object
-            vehicleStats = {
-                totalToday: countData.totalToday,
-                currentHour: countData.hourlyStats.total,
-                types: countData.vehicleTypeCounts,
-                directions: countData.directionCounts
-            };
+         // Update vehicle counts display
+         function updateVehicleCounts(countData) {
+             // Update main statistics
+             document.getElementById('totalVehiclesToday').textContent = countData.totalToday.toLocaleString();
+             document.getElementById('currentHourCount').textContent = countData.hourlyStats.total.toLocaleString();
+             document.getElementById('uniqueTypes').textContent = Object.keys(countData.vehicleTypeCounts).length;
 
-            // Update detailed displays
-            updateVehicleTypeDisplay(countData.vehicleTypeCounts);
-            updateDirectionDisplay(countData.directionCounts);
-            updateTypeDirectionMatrix(countData.typeDirectionMatrix);
-        }
+             // Update vehicle stats object
+             vehicleStats = {
+                 totalToday: countData.totalToday,
+                 currentHour: countData.hourlyStats.total,
+                 types: countData.vehicleTypeCounts,
+                 directions: countData.directionCounts
+             };
 
-        // Add vehicle detection to the list
-        function addVehicleDetection(vehicleData) {
-            detectionCounter++;
-            console.log(vehicleData);
-            const detectionsContainer = document.getElementById('vehicleDetections');
+             // Update detailed displays
+             updateVehicleTypeDisplay(countData.vehicleTypeCounts);
+             updateDirectionDisplay(countData.directionCounts);
+             updateTypeDirectionMatrix(countData.typeDirectionMatrix);
+         }
 
-            const detectionElement = document.createElement('div');
-            detectionElement.className = 'card mb-2';
-            detectionElement.innerHTML = `
-                <div class="card-body py-2">
-                    <div class="row align-items-center">
-                        <div class="col-md-3">
-                            <strong>${vehicleData.vehicleType}</strong>
-                            <div class="small text-muted">${vehicleData.plateNumber || 'No Plate'}</div>
-                        </div>
-                        <div class="col-md-2">
-                            <span class="badge bg-info">${vehicleData.speed} km/h</span>
-                        </div>
-                        <div class="col-md-2">
-                            <span class="badge bg-${getDirectionBadgeColor(vehicleData.direction)}">
-                                ${vehicleData.direction}
-                            </span>
-                        </div>
-                        <div class="col-md-2">
-                            <span class="badge bg-${getConfidenceBadgeColor(vehicleData.confidence)}">
-                                ${vehicleData.confidence}%
-                            </span>
-                        </div>
-                        <div class="col-md-3 text-end">
-                            <small class="text-muted">${new Date(vehicleData.eventTime).toLocaleTimeString()}</small>
-                        </div>
-                    </div>
-                </div>
-            `;
+         // Add vehicle detection to the list
+         function addVehicleDetection(vehicleData) {
+             detectionCounter++;
+             console.log(vehicleData);
+             const detectionsContainer = document.getElementById('vehicleDetections');
 
-            // Add to top of list
-            if (detectionsContainer.firstElementChild && detectionsContainer.firstElementChild.className.includes('text-muted')) {
-                detectionsContainer.innerHTML = '';
-            }
+             const detectionElement = document.createElement('div');
+             detectionElement.className = 'card mb-2';
+             detectionElement.innerHTML = `
+                 <div class="card-body py-2">
+                     <div class="row align-items-center">
+                         <div class="col-md-3">
+                             <strong>${vehicleData.vehicleType}</strong>
+                             <div class="small text-muted">${vehicleData.plateNumber || 'No Plate'}</div>
+                         </div>
+                         <div class="col-md-2">
+                             <span class="badge bg-info">${vehicleData.speed} km/h</span>
+                         </div>
+                         <div class="col-md-2">
+                             <span class="badge bg-${getDirectionBadgeColor(vehicleData.direction)}">
+                                 ${vehicleData.direction}
+                             </span>
+                         </div>
+                         <div class="col-md-2">
+                             <span class="badge bg-${getConfidenceBadgeColor(vehicleData.confidence)}">
+                                 ${vehicleData.confidence}%
+                             </span>
+                         </div>
+                         <div class="col-md-3 text-end">
+                             <small class="text-muted">${new Date(vehicleData.eventTime).toLocaleTimeString()}</small>
+                         </div>
+                     </div>
+                 </div>
+             `;
 
-            detectionsContainer.insertBefore(detectionElement, detectionsContainer.firstChild);
+             // Add to top of list
+             if (detectionsContainer.firstElementChild && detectionsContainer.firstElementChild.className.includes('text-muted')) {
+                 detectionsContainer.innerHTML = '';
+             }
 
-            // Limit to 20 most recent detections
-            const maxDetections = 20;
-            if (detectionsContainer.children.length > maxDetections) {
-                detectionsContainer.removeChild(detectionsContainer.lastChild);
-            }
-        }
+             detectionsContainer.insertBefore(detectionElement, detectionsContainer.firstChild);
 
-        // Update detection counter
-        function updateDetectionCounter() {
-            document.getElementById('detectionCount').textContent = detectionCounter;
-        }
+             // Limit to 20 most recent detections
+             const maxDetections = 20;
+             if (detectionsContainer.children.length > maxDetections) {
+                 detectionsContainer.removeChild(detectionsContainer.lastChild);
+             }
+         }
 
-        // Update vehicle type display
-        function updateVehicleTypeDisplay(typeCounts) {
-            const container = document.getElementById('vehicleTypeCounts');
-            const chartContainer = document.getElementById('vehicleTypeChart');
+         // Update detection counter
+         function updateDetectionCounter(channelId) {
+             document.getElementById('detectionCount').textContent = detectionCounter;
+             console.log('Channel:', channelId);
+               // Find and update the specific flow
+               // const flow = odData.find(f => f.from === 'A' && f.to === 'B'&& f.channelId === channelId);
+               const flow = odData.find(f => f.channelId === channelId);
+               if (flow) {
+                   flow.count = detectionCounter;
+                   updateData(locations, odData);
+               }
+         }
 
-            if (Object.keys(typeCounts).length === 0) {
-                container.innerHTML = '<p class="text-muted">No vehicle data yet</p>';
-                chartContainer.innerHTML = '<div class="text-center text-muted py-4"><p>No data available</p></div>';
-                return;
-            }
+         // Update vehicle type display
+         function updateVehicleTypeDisplay(typeCounts) {
+             const container = document.getElementById('vehicleTypeCounts');
+             const chartContainer = document.getElementById('vehicleTypeChart');
 
-            // Update detailed list
-            let html = '';
-            Object.entries(typeCounts).forEach(([type, count]) => {
-                const percentage = ((count / vehicleStats.totalToday) * 100).toFixed(1);
-                html += `
-                    <div class="d-flex justify-content-between align-items-center mb-2">
-                        <span>${type}</span>
-                        <div>
-                            <span class="badge bg-primary">${count}</span>
-                            <small class="text-muted ms-1">${percentage}%</small>
-                        </div>
-                    </div>
-                    <div class="progress mb-3" style="height: 8px;">
-                        <div class="progress-bar" role="progressbar"
-                             style="width: ${percentage}%;"
-                             aria-valuenow="${percentage}"
-                             aria-valuemin="0"
-                             aria-valuemax="100"></div>
-                    </div>
-                `;
-            });
-            container.innerHTML = html;
+             if (Object.keys(typeCounts).length === 0) {
+                 container.innerHTML = '<p class="text-muted">No vehicle data yet</p>';
+                 chartContainer.innerHTML = '<div class="text-center text-muted py-4"><p>No data available</p></div>';
+                 return;
+             }
 
-            // Update chart (simplified)
-            updateVehicleTypeChart(typeCounts);
-        }
+             // Update detailed list
+             let html = '';
+             Object.entries(typeCounts).forEach(([type, count]) => {
+                 const percentage = ((count / vehicleStats.totalToday) * 100).toFixed(1);
+                 html += `
+                     <div class="d-flex justify-content-between align-items-center mb-2">
+                         <span>${type}</span>
+                         <div>
+                             <span class="badge bg-primary">${count}</span>
+                             <small class="text-muted ms-1">${percentage}%</small>
+                         </div>
+                     </div>
+                     <div class="progress mb-3" style="height: 8px;">
+                         <div class="progress-bar" role="progressbar"
+                              style="width: ${percentage}%;"
+                              aria-valuenow="${percentage}"
+                              aria-valuemin="0"
+                              aria-valuemax="100"></div>
+                     </div>
+                 `;
+             });
+             container.innerHTML = html;
 
-        // Update direction display
-        function updateDirectionDisplay(directionCounts) {
-            const container = document.getElementById('directionCounts');
-            const statsContainer = document.getElementById('directionStats');
+             // Update chart (simplified)
+             updateVehicleTypeChart(typeCounts);
+         }
 
-            if (Object.keys(directionCounts).length === 0) {
-                container.innerHTML = '<p class="text-muted">No direction data yet</p>';
-                statsContainer.innerHTML = '<div class="text-center text-muted py-3"><p>No direction data</p></div>';
-                return;
-            }
+         // Update direction display
+         function updateDirectionDisplay(directionCounts) {
+             const container = document.getElementById('directionCounts');
+             const statsContainer = document.getElementById('directionStats');
 
-            let html = '';
-            let statsHtml = '';
+             if (Object.keys(directionCounts).length === 0) {
+                 container.innerHTML = '<p class="text-muted">No direction data yet</p>';
+                 statsContainer.innerHTML = '<div class="text-center text-muted py-3"><p>No direction data</p></div>';
+                 return;
+             }
 
-            Object.entries(directionCounts).forEach(([direction, count]) => {
-                const percentage = ((count / vehicleStats.totalToday) * 100).toFixed(1);
-                html += `
-                    <div class="d-flex justify-content-between align-items-center mb-2">
-                        <span>${direction}</span>
-                        <div>
-                            <span class="badge bg-secondary">${count}</span>
-                            <small class="text-muted ms-1">${percentage}%</small>
-                        </div>
-                    </div>
-                `;
+             let html = '';
+             let statsHtml = '';
 
-                statsHtml += `
-                    <div class="mb-2">
-                        <div class="d-flex justify-content-between">
-                            <span>${direction}</span>
-                            <span class="fw-bold">${count}</span>
-                        </div>
-                        <div class="progress" style="height: 6px;">
-                            <div class="progress-bar bg-${getDirectionBadgeColor(direction)}"
-                                 style="width: ${percentage}%;"></div>
-                        </div>
-                    </div>
-                `;
-            });
+             Object.entries(directionCounts).forEach(([direction, count]) => {
+                 const percentage = ((count / vehicleStats.totalToday) * 100).toFixed(1);
+                 html += `
+                     <div class="d-flex justify-content-between align-items-center mb-2">
+                         <span>${direction}</span>
+                         <div>
+                             <span class="badge bg-secondary">${count}</span>
+                             <small class="text-muted ms-1">${percentage}%</small>
+                         </div>
+                     </div>
+                 `;
 
-            container.innerHTML = html;
-            statsContainer.innerHTML = statsHtml;
-        }
+                 statsHtml += `
+                     <div class="mb-2">
+                         <div class="d-flex justify-content-between">
+                             <span>${direction}</span>
+                             <span class="fw-bold">${count}</span>
+                         </div>
+                         <div class="progress" style="height: 6px;">
+                             <div class="progress-bar bg-${getDirectionBadgeColor(direction)}"
+                                  style="width: ${percentage}%;"></div>
+                         </div>
+                     </div>
+                 `;
+             });
 
-        // Update type-direction matrix
-        function updateTypeDirectionMatrix(matrix) {
-            // This could be implemented as a heatmap or detailed table
-            console.log('Type-Direction Matrix:', matrix);
-        }
+             container.innerHTML = html;
+             statsContainer.innerHTML = statsHtml;
+         }
 
-        // Simplified vehicle type chart
-        function updateVehicleTypeChart(typeCounts) {
-            const container = document.getElementById('vehicleTypeChart');
-            const types = Object.keys(typeCounts);
-            const counts = Object.values(typeCounts);
-            const total = counts.reduce((sum, count) => sum + count, 0);
+         // Update type-direction matrix
+         function updateTypeDirectionMatrix(matrix) {
+             // This could be implemented as a heatmap or detailed table
+             console.log('Type-Direction Matrix:', matrix);
+         }
 
-            if (total === 0) {
-                container.innerHTML = '<div class="text-center text-muted py-4"><p>No data available</p></div>';
-                return;
-            }
+         // Simplified vehicle type chart
+         function updateVehicleTypeChart(typeCounts) {
+             const container = document.getElementById('vehicleTypeChart');
+             const types = Object.keys(typeCounts);
+             const counts = Object.values(typeCounts);
+             const total = counts.reduce((sum, count) => sum + count, 0);
 
-            let chartHtml = '';
-            types.forEach((type, index) => {
-                const percentage = ((counts[index] / total) * 100).toFixed(1);
-                const color = getChartColor(index);
+             if (total === 0) {
+                 container.innerHTML = '<div class="text-center text-muted py-4"><p>No data available</p></div>';
+                 return;
+             }
 
-                chartHtml += `
-                    <div class="mb-2">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <div>
-                                <span class="badge" style="background-color: ${color}">${type}</span>
-                            </div>
-                            <div>
-                                <span class="fw-bold">${counts[index]}</span>
-                                <small class="text-muted">(${percentage}%)</small>
-                            </div>
-                        </div>
-                        <div class="progress" style="height: 10px;">
-                            <div class="progress-bar" style="width: ${percentage}%; background-color: ${color};"></div>
-                        </div>
-                    </div>
-                `;
-            });
+             let chartHtml = '';
+             types.forEach((type, index) => {
+                 const percentage = ((counts[index] / total) * 100).toFixed(1);
+                 const color = getChartColor(index);
 
-            container.innerHTML = chartHtml;
-        }
+                 chartHtml += `
+                     <div class="mb-2">
+                         <div class="d-flex justify-content-between align-items-center">
+                             <div>
+                                 <span class="badge" style="background-color: ${color}">${type}</span>
+                             </div>
+                             <div>
+                                 <span class="fw-bold">${counts[index]}</span>
+                                 <small class="text-muted">(${percentage}%)</small>
+                             </div>
+                         </div>
+                         <div class="progress" style="height: 10px;">
+                             <div class="progress-bar" style="width: ${percentage}%; background-color: ${color};"></div>
+                         </div>
+                     </div>
+                 `;
+             });
 
-        // Helper functions
-        function getDirectionBadgeColor(direction) {
-            const colors = {
-                'Left': 'info',
-                'Right': 'success',
-                'Straight': 'primary',
-                'Left Turn': 'warning',
-                'Right Turn': 'secondary',
-                'U-Turn': 'danger'
-            };
-            return colors[direction] || 'dark';
-        }
+             container.innerHTML = chartHtml;
+         }
 
-        function getConfidenceBadgeColor(confidence) {
-            if (confidence >= 90) return 'success';
-            if (confidence >= 70) return 'info';
-            if (confidence >= 50) return 'warning';
-            return 'danger';
-        }
+         // Helper functions
+         function getDirectionBadgeColor(direction) {
+             const colors = {
+                 'Left': 'info',
+                 'Right': 'success',
+                 'Straight': 'primary',
+                 'Left Turn': 'warning',
+                 'Right Turn': 'secondary',
+                 'U-Turn': 'danger'
+             };
+             return colors[direction] || 'dark';
+         }
 
-        function getChartColor(index) {
-            const colors = ['#007bff', '#28a745', '#ffc107', '#dc3545', '#6c757d', '#17a2b8', '#e83e8c', '#fd7e14'];
-            return colors[index % colors.length];
-        }
+         function getConfidenceBadgeColor(confidence) {
+             if (confidence >= 90) return 'success';
+             if (confidence >= 70) return 'info';
+             if (confidence >= 50) return 'warning';
+             return 'danger';
+         }
 
-        function updateTrafficConnectionStatus(connected) {
-            const statusElement = document.getElementById('trafficConnectionStatus');
-            const detailsElement = document.getElementById('connectionDetails');
+         function getChartColor(index) {
+             const colors = ['#007bff', '#28a745', '#ffc107', '#dc3545', '#6c757d', '#17a2b8', '#e83e8c', '#fd7e14'];
+             return colors[index % colors.length];
+         }
 
-            if (connected) {
-                statusElement.innerHTML = '<i class="fas fa-circle"></i> Connected';
-                statusElement.className = 'badge bg-success';
-                detailsElement.textContent = 'Receiving real-time traffic data';
-            } else {
-                statusElement.innerHTML = '<i class="fas fa-circle"></i> Disconnected';
-                statusElement.className = 'badge bg-danger';
-                detailsElement.textContent = 'Connection lost';
-            }
-        }
+         function updateTrafficConnectionStatus(connected) {
+             const statusElement = document.getElementById('trafficConnectionStatus');
+             const detailsElement = document.getElementById('connectionDetails');
 
-        function showTrafficToast(message, type) {
-            // Simple notification - you can replace with a proper toast library
-            const alertClass = `alert alert-${type} alert-dismissible fade show`;
-            const toastHtml = `
-                <div class="${alertClass}" role="alert">
-                    <strong>Traffic Monitoring:</strong> ${message}
-                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                </div>
-            `;
+             if (connected) {
+                 statusElement.innerHTML = '<i class="fas fa-circle"></i> Connected';
+                 statusElement.className = 'badge bg-success';
+                 detailsElement.textContent = 'Receiving real-time traffic data';
+             } else {
+                 statusElement.innerHTML = '<i class="fas fa-circle"></i> Disconnected';
+                 statusElement.className = 'badge bg-danger';
+                 detailsElement.textContent = 'Connection lost';
+             }
+         }
 
-            // Prepend to the connection panel
-            const connectionPanel = document.getElementById('trafficConnectionPanel');
-            connectionPanel.insertAdjacentHTML('afterend', toastHtml);
-        }
+         function showTrafficToast(message, type) {
+             // Simple notification - you can replace with a proper toast library
+             const alertClass = `alert alert-${type} alert-dismissible fade show`;
+             const toastHtml = `
+                 <div class="${alertClass}" role="alert">
+                     <strong>Traffic Monitoring:</strong> ${message}
+                     <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                 </div>
+             `;
 
-        // Event listeners
-                document.getElementById('refreshStats').addEventListener('click', () => {
-            if (trafficConnection && trafficConnection.state === signalR.HubConnectionState.Connected) {
-                trafficConnection.invoke("TrafficPing").then(pong => {
-                    showTrafficToast(`Refreshed: ${pong}`, 'info');
-                });
-            }
-        });
+             // Prepend to the connection panel
+             const connectionPanel = document.getElementById('trafficConnectionPanel');
+             connectionPanel.insertAdjacentHTML('afterend', toastHtml);
+         }
 
-        document.getElementById('trafficReconnectBtn').addEventListener('click', () => {
-            initializeTrafficMonitoring();
-        });
+         // Event listeners
+                 document.getElementById('refreshStats').addEventListener('click', () => {
+             if (trafficConnection && trafficConnection.state === signalR.HubConnectionState.Connected) {
+                 trafficConnection.invoke("TrafficPing").then(pong => {
+                     showTrafficToast(`Refreshed: ${pong}`, 'info');
+                 });
+             }
+         });
 
-        document.getElementById('trafficDisconnectBtn').addEventListener('click', () => {
-            if (trafficConnection) {
-                trafficConnection.stop();
-            }
-        });
+         document.getElementById('trafficReconnectBtn').addEventListener('click', () => {
+             initializeTrafficMonitoring();
+         });
 
-        // Initialize when page loads
-        document.addEventListener('DOMContentLoaded', function() {
-            initializeTrafficMonitoring();
-        });
+         document.getElementById('trafficDisconnectBtn').addEventListener('click', () => {
+             if (trafficConnection) {
+                 trafficConnection.stop();
+             }
+         });
 
-        // Cleanup when leaving page
-               window.addEventListener('beforeunload', () => {
-            if (trafficConnection) {
-                trafficConnection.invoke("LeaveTrafficMonitoringGroup");
-                trafficConnection.stop();
-            }
-        });
+         // Initialize when page loads
+         document.addEventListener('DOMContentLoaded', function() {
+             initializeTrafficMonitoring();
+         });
+
+         // Cleanup when leaving page
+                window.addEventListener('beforeunload', () => {
+             if (trafficConnection) {
+                 trafficConnection.invoke("LeaveTrafficMonitoringGroup");
+                 trafficConnection.stop();
+             }
+         });
+
+
+             // Initialize the map
+         function initMap() {
+             if (map1) {
+                 map1.remove();
+             }
+
+             map1 = L.map('map1');
+             L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map1);
+
+             // Clear previous markers
+             clearMarkers();
+
+             renderMap();
+         }
+
+             // Clear all existing markers and layers
+         function clearMarkers() {
+             markers.forEach(marker => map1.removeLayer(marker));
+             pins.forEach(pin => map1.removeLayer(pin));
+             markers = [];
+             pins = [];
+
+             if (flowLayer) {
+                 map1.removeLayer(flowLayer);
+             }
+         }
+
+             // Render or update the map with current data
+         function renderMap() {
+             // Update inbound/outbound for each location
+             Object.keys(locations).forEach(key => {
+                 locations[key].inbound = 0;
+                 locations[key].outbound = 0;
+             });
+
+             odData.forEach(d => {
+                 if (locations[d.from]) {
+                     locations[d.from].outbound += d.count;
+                 }
+                 if (locations[d.to]) {
+                     locations[d.to].inbound += d.count;
+                 }
+             });
+
+             // Flowmap GeoJSON
+             var flowPoints = {
+                 "type": "FeatureCollection",
+                 "features": odData.map(p => ({
+                     "type": "Feature",
+                     "geometry": { "type": "Point", "coordinates": [p.lngFrom, p.latFrom] },
+                     "properties": {
+                         "origin_id": p.from,
+                         "origin_lat": p.latFrom,
+                         "origin_lon": p.lngFrom,
+                         "destination_id": p.to,
+                         "destination_lat": p.latTo,
+                         "destination_lon": p.lngTo,
+                         "distance": p.distance,
+                         "count": p.count
+                     }
+                 }))
+             };
+
+             // Add flow layer
+             flowLayer = L.canvasFlowmapLayer(flowPoints, {
+                 originAndDestinationFieldIds: {
+                     originUniqueIdField: 'origin_id',
+                     originGeometry: { x: 'origin_lon', y: 'origin_lat' },
+                     destinationUniqueIdField: 'destination_id',
+                     destinationGeometry: { x: 'destination_lon', y: 'destination_lat' }
+                 },
+                 pathDisplayMode: 'all',
+                 animationStarted: true,
+                 animationDuration: 2000,
+                 animationEasingFamily: 'Cubic',
+                 animationEasingType: 'In'
+             }).addTo(map1);
+
+             // Add pins + custom count markers
+             Object.keys(locations).forEach(key => {
+                 const loc = locations[key];
+                 const total = loc.inbound + loc.outbound;
+
+                 // Circle count marker
+                 const marker = L.marker([loc.lat, loc.lng], {
+                     icon: L.divIcon({
+                         className: "custom-marker",
+                         html: `<div>${key}<br>${total}</div>`,
+                         iconAnchor: [27, 27]
+                     })
+                 }).addTo(map1);
+                 markers.push(marker);
+
+                 // Standard pin
+                 const pin = L.marker([loc.lat, loc.lng]).addTo(map1);
+                 pins.push(pin);
+
+                 // Popup with location info
+                 const popupHtml = `
+                     <b>Location ${key}</b><br>
+                     ${loc.info}<br>
+                     <hr style="margin:4px 0;">
+                     Inbound: ${loc.inbound} vehicles<br>
+                     Outbound: ${loc.outbound} vehicles<br>
+                     <b>Total: ${total}</b>
+                 `;
+                 pin.bindPopup(popupHtml);
+                 marker.bindPopup(popupHtml);
+             });
+
+             // Auto zoom to fit all
+             let allLatLngs = [];
+             Object.keys(locations).forEach(k => {
+                 allLatLngs.push([locations[k].lat, locations[k].lng]);
+             });
+
+             if (allLatLngs.length > 0) {
+                 map1.fitBounds(allLatLngs, { padding: [50, 50] });
+             }
+         }
+
+         // Update data and refresh map
+         function updateData(newLocations, newOdData) {
+             locations = { ...newLocations };
+             odData = [...newOdData];
+
+             // Re-render the map with new data
+             clearMarkers();
+             renderMap();
+         }
+
+
+              // Initialize with empty data
+         locations = {
+             "A": { lat: 30.1798, lng: 66.9750, info: "Main City Center", inbound: 0, outbound: 0 },
+             "B": { lat: 30.2000, lng: 67.0100, info: "Industrial Zone", inbound: 0, outbound: 0 },
+             "C": { lat: 30.2500, lng: 67.0500, info: "Residential Area", inbound: 0, outbound: 0 }
+         };
+             // OD flow data
+        odData = [
+             { from: "A", latFrom: 30.1798, lngFrom: 66.9750, to: "B",channelId:5, latTo: 30.2000, lngTo: 67.0100, distance: "10 km", count: 0 },
+             { from: "B", latFrom: 30.2000, lngFrom: 67.0100, to: "C",channelId:6, latTo: 30.2500, lngTo: 67.0500, distance: "15 km", count: 0 },
+             { from: "C", latFrom: 30.2500, lngFrom: 67.0500, to: "A",channelId:7, latTo: 30.1798, lngTo: 66.9750, distance: "18 km", count: 0 },
+             { from: "C", latFrom: 30.2500, lngFrom: 67.0500, to: "B",channelId:8, latTo: 30.2000, lngTo: 67.0100, distance: "12 km", count: 0 }
+         ];
+
+         // Initialize map
+         initMap();
     </script>
 
     <style>

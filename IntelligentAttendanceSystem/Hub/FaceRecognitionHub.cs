@@ -19,6 +19,7 @@
             try
             {
                 await Groups.AddToGroupAsync(Context.ConnectionId, "FaceRecognition");
+                await Groups.AddToGroupAsync(Context.ConnectionId, "TrafficMonitoring");
                 ConnectedClients.Add(Context.ConnectionId);
                 _logger.LogInformation($"Client {Context.ConnectionId} joined FaceRecognition group. Total clients: {ConnectedClients.Count}");
 
@@ -41,6 +42,7 @@
             try
             {
                 await Groups.RemoveFromGroupAsync(Context.ConnectionId, "FaceRecognition");
+                await Groups.AddToGroupAsync(Context.ConnectionId, "TrafficMonitoring");
                 ConnectedClients.Remove(Context.ConnectionId);
                 _logger.LogInformation($"Client {Context.ConnectionId} left FaceRecognition group. Total clients: {ConnectedClients.Count}");
             }

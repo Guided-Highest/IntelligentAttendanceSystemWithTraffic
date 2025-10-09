@@ -118,7 +118,12 @@ namespace IntelligentAttendanceSystem.Controllers
                 return View(model);
             }
         }
-
+        [HttpGet]
+        public async Task<JsonResult> Status()
+        {
+            var status = await _deviceService.GetDeviceStatusObject();
+            return Json(status);
+        }
         private void OnDeviceDisconnected()
         {
             // This event is raised by the service when SDK detects disconnection

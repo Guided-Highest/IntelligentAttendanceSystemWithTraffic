@@ -12,6 +12,7 @@
         public int EventNumber { get; set; }
         public int ChannelId { get; set; }
         public string EventAction { get; set; }
+        public int SourceChannel { get; set; }
     }
 
     public class TrafficVehicleInfo

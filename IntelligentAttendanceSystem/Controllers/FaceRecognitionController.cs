@@ -37,43 +37,84 @@ namespace IntelligentAttendanceSystem.Controllers
         }
 
         [HttpPost]
-        public async Task<JsonResult> StartRecognition(int channel = 0)
+        public async Task<JsonResult> StartRecognition([FromBody] int channel = 0)
         {
             try
             {
-                if (_faceRecognitionService.IsFaceRecognationStart)
+                bool isrunning = _faceRecognitionService.IsChannelRunning(channel);
+                if (isrunning)
                 {
                     return Json(new
                     {
-                        success = _faceRecognitionService.IsFaceRecognationStart,
-                        message = _faceRecognitionService.IsFaceRecognationStart ? "Face recognition started" : "Failed to start face recognition"
+                        success = isrunning,
+                        message = isrunning ? "Face recognition started" : "Failed to start face recognition"
                     });
                 }
                 bool success = await _faceRecognitionService.StartFaceRecognitionAsync(channel);
-                return Json(new { success, message = success ? "Face recognition started" : "Failed to start face recognition" });
+                return Json(new { success, message = success ? $"Face recognition started on channel {channel}" : $"Failed to start face recognition on channel {channel}" });
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error starting face recognition");
+                _logger.LogError(ex, $"Error starting face recognition on channel {channel}");
                 return Json(new { success = false, message = ex.Message });
             }
         }
 
         [HttpPost]
-        public async Task<JsonResult> StopRecognition()
+        public async Task<JsonResult> StopRecognition([FromBody] int channel = 0)
         {
             try
             {
-                bool success = await _faceRecognitionService.StopFaceRecognitionAsync();
-                return Json(new { success, message = success ? "Face recognition stopped" : "Failed to stop face recognition" });
+                bool success = await _faceRecognitionService.StopFaceRecognitionAsync(channel);
+                return Json(new
+                {
+                    success,
+                    message = success ? $"Face recognition stopped on channel {channel}" :
+                    $"Failed to stop face recognition on channel {channel}"
+                });
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error stopping face recognition");
+                _logger.LogError(ex, $"Error stopping face recognition on channel {channel}");
                 return Json(new { success = false, message = ex.Message });
             }
         }
 
+        [HttpGet]
+        public JsonResult GetRunningChannels()
+        {
+            try
+            {
+                var channels = _faceRecognitionService.GetRunningChannels();
+                return Json(new { success = true, channels });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting running channels");
+                return Json(new { success = false, channels = new List<int>() });
+            }
+        }
+        [HttpGet]
+        public JsonResult GetChannelStatus(int channel)
+        {
+            try
+            {
+                var isRunning = _faceRecognitionService.IsChannelRunning(channel);
+                // You might want to include additional stats like event counts
+                return Json(new
+                {
+                    success = true,
+                    channel = channel,
+                    isRunning = isRunning,
+                    //eventCount = 0 // Implement this based on your needs
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"Error getting status for channel {channel}");
+                return Json(new { success = false, channel = channel });
+            }
+        }
         [HttpGet]
         public async Task<JsonResult> GetStatus()
         {

@@ -6,6 +6,7 @@ using IntelligentAttendanceSystem.Structures;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using NetSDKCS;
+using System.Collections.Concurrent;
 using System.Runtime.InteropServices;
 using static IntelligentAttendanceSystem.Models.FaceRecognitionModels;
 
@@ -13,6 +14,7 @@ namespace IntelligentAttendanceSystem.Services
 {
     public class FaceRecognitionService : IFaceRecognitionService, IDisposable
     {
+        private readonly ConcurrentDictionary<int, ChannelRecognitionState> _channelStates;
         private readonly IDahuaDeviceService _deviceService;
         private readonly ILogger<FaceRecognitionService> _logger;
         private readonly IHubContext<FaceRecognitionHub> _hubContext;
@@ -41,6 +43,7 @@ namespace IntelligentAttendanceSystem.Services
             _logger = logger;
             _hubContext = hubContext;
             _serviceScopeFactory = serviceScopeFactory;// Add this
+            _channelStates = new ConcurrentDictionary<int, ChannelRecognitionState>();
             using var scope = _serviceScopeFactory.CreateScope();
             var _vehicleCountingService = scope.ServiceProvider.GetRequiredService<IVehicleCountingService>();
             // Subscribe to vehicle detection events
@@ -118,16 +121,15 @@ namespace IntelligentAttendanceSystem.Services
                 _logger.LogWarning("Cannot start face recognition - device not connected");
                 return false;
             }
-
-            if (m_AnalyzerID != IntPtr.Zero)
+            if (_channelStates.ContainsKey(channel) && _channelStates[channel].IsRunning)
             {
-                _logger.LogWarning("Face recognition is already running");
+                _logger.LogWarning($"Face recognition is already running on channel {channel}");
                 return true;
             }
 
             try
             {
-                _currentChannel = channel;
+                //_currentChannel = channel;
 
                 m_AnalyzerID = NETClient.RealLoadPicture(
                     _deviceService.LoginID,
@@ -145,6 +147,15 @@ namespace IntelligentAttendanceSystem.Services
                     return false;
                 }
 
+                var state = new ChannelRecognitionState
+                {
+                    AnalyzerID = m_AnalyzerID,
+                    IsRunning = true,
+                    Channel = channel
+                };
+                _channelStates[channel] = state;
+
+
                 _logger.LogInformation($"Face recognition started on channel {channel}");
                 IsFaceRecognationStart = true;
                 return true;
@@ -157,32 +168,47 @@ namespace IntelligentAttendanceSystem.Services
             }
         }
 
-        public async Task<bool> StopFaceRecognitionAsync()
+        public async Task<bool> StopFaceRecognitionAsync(int channel = 0)
         {
-            if (m_AnalyzerID == IntPtr.Zero)
-            {
-                return true;
-            }
 
-            try
+            if (_channelStates.TryGetValue(channel, out var state))
             {
-                bool ret = NETClient.StopLoadPic(m_AnalyzerID);
-                if (!ret)
+                try
                 {
-                    string error = NETClient.GetLastError();
-                    _logger.LogError($"Failed to stop face recognition: {error}");
+                    // Stop the analyzer for this channel
+                    if (state.AnalyzerID != IntPtr.Zero)
+                    {
+                        bool ret = NETClient.StopLoadPic(state.AnalyzerID);
+                        if (!ret)
+                        {
+                            string error = NETClient.GetLastError();
+                            _logger.LogError($"Failed to stop face recognition: {error}");
+                            return false;
+                        }
+                    }
+
+                    _channelStates.TryRemove(channel, out _);
+                    _logger.LogInformation($"Face recognition stopped on channel {channel}");
+                    return true;
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, $"Exception stopping face recognition on channel {channel}");
                     return false;
                 }
+            }
 
-                m_AnalyzerID = IntPtr.Zero;
-                _logger.LogInformation("Face recognition stopped");
-                return true;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Exception stopping face recognition");
-                return false;
-            }
+            _logger.LogWarning($"Face recognition is not running on channel {channel}");
+            return false;
+        }
+        public bool IsChannelRunning(int channel)
+        {
+            return _channelStates.ContainsKey(channel) && _channelStates[channel].IsRunning;
+        }
+
+        public List<int> GetRunningChannels()
+        {
+            return _channelStates.Where(x => x.Value.IsRunning).Select(x => x.Key).ToList();
         }
 
         public Task<FaceRecognitionStatus> GetStatusAsync()
@@ -202,7 +228,8 @@ namespace IntelligentAttendanceSystem.Services
         // The main callback method from SDK
         private int AnalyzerDataCallBack(IntPtr lAnalyzerHandle, uint dwEventType, IntPtr pEventInfo, IntPtr pBuffer, uint dwBufSize, IntPtr dwUser, int nSequence, IntPtr reserved)
         {
-            if (m_AnalyzerID == lAnalyzerHandle)
+            var channelState = _channelStates.Values.FirstOrDefault(state => state.AnalyzerID == lAnalyzerHandle);
+            if (channelState != null)
             {
                 try
                 {
@@ -215,7 +242,7 @@ namespace IntelligentAttendanceSystem.Services
                             ProcessFaceDetectionEvent(pEventInfo, pBuffer, dwBufSize);
                             break;
                         case (uint)EM_EVENT_IVS_TYPE.TRAFFICJUNCTION:
-                            ProcessTrafficJunctionEvent(pEventInfo, pBuffer, dwBufSize);
+                            ProcessTrafficJunctionEvent(channelState.Channel, pEventInfo, pBuffer, dwBufSize);
                             break;
                         default:
                             _logger.LogDebug($"Unhandled event type: {dwEventType}");
@@ -226,6 +253,10 @@ namespace IntelligentAttendanceSystem.Services
                 {
                     _logger.LogError(ex, "Error processing analyzer callback");
                 }
+            }
+            else
+            {
+                _logger.LogWarning($"Received callback for unknown analyzer handle: {lAnalyzerHandle}");
             }
             return 0;
         }
@@ -437,21 +468,39 @@ namespace IntelligentAttendanceSystem.Services
 
         private string ExtractImageFromBuffer(IntPtr pBuffer, uint offset, uint length)
         {
+            if (pBuffer == IntPtr.Zero || length == 0 || offset >= uint.MaxValue - length)
+            {
+                _logger.LogWarning($"Invalid buffer parameters - Offset: {offset}, Length: {length}, Buffer: {pBuffer}");
+                return null;
+            }
             try
             {
-                if (pBuffer == IntPtr.Zero || length == 0 || offset >= uint.MaxValue - length)
+                // Validate that the offset + length doesn't exceed reasonable bounds
+                if (length > 10 * 1024 * 1024) // 10MB max image size
                 {
-                    _logger.LogWarning($"Invalid buffer parameters - Offset: {offset}, Length: {length}, Buffer: {pBuffer}");
+                    _logger.LogWarning($"Image size too large: {length} bytes");
                     return null;
                 }
-
                 byte[] imageData = new byte[length];
+                // Calculate the source pointer
+                IntPtr sourcePtr = IntPtr.Add(pBuffer, (int)offset);
+
+                // Verify the pointer is valid (basic check)
+                if (sourcePtr == IntPtr.Zero)
+                {
+                    _logger.LogWarning("Invalid source pointer after offset calculation");
+                    return null;
+                }
                 Marshal.Copy(IntPtr.Add(pBuffer, (int)offset), imageData, 0, (int)length);
 
                 // Validate that it's actually image data
                 if (IsValidImageData(imageData))
                 {
-                    return Convert.ToBase64String(imageData);
+                    // Convert to base64
+                    string base64String = Convert.ToBase64String(imageData);
+
+                    _logger.LogDebug($"Successfully extracted image: {length} bytes");
+                    return base64String;
                 }
                 else
                 {
@@ -459,9 +508,19 @@ namespace IntelligentAttendanceSystem.Services
                     return null;
                 }
             }
+            catch (ArgumentOutOfRangeException ex)
+            {
+                _logger.LogError(ex, $"Argument out of range in ExtractImageFromBuffer: offset={offset}, length={length}");
+                return null;
+            }
+            catch (AccessViolationException ex)
+            {
+                _logger.LogError(ex, $"Access violation in ExtractImageFromBuffer: offset={offset}, length={length}");
+                return null;
+            }
             catch (Exception ex)
             {
-                _logger.LogError(ex, $"Error extracting image from buffer at offset {offset}, length {length}");
+                _logger.LogError(ex, $"Unexpected error in ExtractImageFromBuffer: offset={offset}, length={length}");
                 return null;
             }
         }
@@ -552,7 +611,7 @@ namespace IntelligentAttendanceSystem.Services
             return beard.ToString().Replace("_", " ");
         }
         #region Trafic Count
-        private async void ProcessTrafficJunctionEvent(IntPtr pEventInfo, IntPtr pBuffer, uint dwBufSize)
+        private async void ProcessTrafficJunctionEvent(int channel, IntPtr pEventInfo, IntPtr pBuffer, uint dwBufSize)
         {
             try
             {
@@ -594,7 +653,8 @@ namespace IntelligentAttendanceSystem.Services
                     Speed = speed,
                     Confidence = confidence,
                     ObjectId = info.stuObject.nObjectID,
-                    BoundingBox = ExtractBoundingBox(info.stuObject.BoundingBox)
+                    BoundingBox = ExtractBoundingBox(info.stuObject.BoundingBox),
+                    SourceChannel = channel // Add channel info
                 };
 
 
@@ -606,20 +666,21 @@ namespace IntelligentAttendanceSystem.Services
                     VehicleInfo = ExtractVehicleInfo(info),
                     EventNumber = Interlocked.Increment(ref _eventCounter),
                     ChannelId = junctionId,
+                    SourceChannel = channel, // Track which channel this came from
                     EventAction = info.bEventAction == 1 ? "Start" : "Stop"
                 };
                 // Extract images using available fields
                 if (IntPtr.Zero != pBuffer && dwBufSize > 0)
                 {
                     // Extract scene image if available
-                    if (info.bSceneImage && info.stuSceneImage.nLength > 0)
+                    if (info.bSceneImage && info.stuSceneImage.nLength > 0 && info.stuSceneImage.nLength <= dwBufSize)
                     {
                         trafficEvent.GlobalImageBase64 = ExtractImageFromBuffer(
                             pBuffer, info.stuSceneImage.nOffSet, info.stuSceneImage.nLength);
                     }
 
                     // Extract object image if available (from stuObject)
-                    if (info.stuObject.bPicEnble == 1 && info.stuObject.stPicInfo.dwFileLenth > 0)
+                    if (info.stuObject.bPicEnble == 1 && info.stuObject.stPicInfo.dwFileLenth > 0 && info.stuObject.stPicInfo.dwFileLenth <= dwBufSize)
                     {
                         trafficEvent.VehicleInfo.VehicleImageBase64 = ExtractImageFromBuffer(
                             pBuffer, info.stuObject.stPicInfo.dwOffSet, info.stuObject.stPicInfo.dwFileLenth);
@@ -635,7 +696,7 @@ namespace IntelligentAttendanceSystem.Services
 
                 await SendVehicleDetection(eventInfo);
                 // Also send vehicle count update
-                await SendVehicleCountUpdate(junctionId);
+                await SendVehicleCountUpdate(channel, junctionId);
 
                 // Log to database
                 _ = Task.Run(() => LogTrafficEventAsync(trafficEvent));
@@ -687,7 +748,7 @@ namespace IntelligentAttendanceSystem.Services
             }
         }
         #region Vehicle Counting Logic
-        private async Task SendVehicleCountUpdate(int junctionId)
+        private async Task SendVehicleCountUpdate(int channel, int junctionId)
         {
             try
             {
@@ -698,6 +759,7 @@ namespace IntelligentAttendanceSystem.Services
 
                 var countUpdate = new
                 {
+                    Channel = channel,
                     JunctionId = junctionId,
                     TotalToday = stats.TotalVehicles,
                     VehicleTypeCounts = stats.VehicleTypeCounts,
@@ -761,7 +823,7 @@ namespace IntelligentAttendanceSystem.Services
                     await SendVehicleDetection(e);
 
                     // Also update the counts
-                    await SendVehicleCountUpdate(e.JunctionId);
+                    await SendVehicleCountUpdate(e.SourceChannel, e.JunctionId);
                 }
                 catch (Exception ex)
                 {
@@ -1163,7 +1225,12 @@ namespace IntelligentAttendanceSystem.Services
         public void Dispose()
         {
             _healthCheckTimer?.Dispose();
-            StopFaceRecognitionAsync().Wait();
+            // Stop all running channels when service is disposed
+            foreach (var channel in _channelStates.Keys.ToList())
+            {
+                StopFaceRecognitionAsync(channel).Wait(5000); // Wait up to 5 seconds
+            }
+            _channelStates.Clear();
         }
     }
 }
