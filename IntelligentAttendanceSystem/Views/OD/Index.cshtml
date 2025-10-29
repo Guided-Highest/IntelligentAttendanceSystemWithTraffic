@@ -1,0 +1,812 @@
+﻿@{
+    Layout = "_Layout";
+}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OTD Lines with Traffic Animations</title>
+
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #1a2a3a, #2c3e50);
+            color: #ecf0f1;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            padding: 20px;
+            gap: 20px;
+        }
+
+        header {
+            text-align: center;
+            padding: 20px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            background: linear-gradient(90deg, #3498db, #2ecc71);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+
+        .subtitle {
+            font-size: 1.2rem;
+            opacity: 0.8;
+            max-width: 800px;
+            margin: 0 auto;
+            line-height: 1.6;
+        }
+
+        .content {
+            display: flex;
+            gap: 20px;
+            flex: 1;
+            min-height: 0;
+        }
+
+        @@media (max-width: 992px) {
+            .content {
+                flex-direction: column;
+            }
+        }
+
+        #map-container {
+            flex: 1;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+            position: relative;
+        }
+
+        #map {
+            height: 100%;
+            width: 100%;
+        }
+
+        .panel {
+            width: 350px;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 10px;
+            padding: 25px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            overflow-y: auto;
+        }
+
+        @@media (max-width: 992px) {
+            .panel {
+                width: 100%;
+                max-height: 300px;
+            }
+        }
+
+        .panel h2 {
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #3498db;
+            color: #3498db;
+        }
+
+        .control-group {
+            margin-bottom: 25px;
+        }
+
+            .control-group h3 {
+                margin-bottom: 15px;
+                color: #ecf0f1;
+                font-size: 1.1rem;
+            }
+
+        .slider-container {
+            margin-bottom: 15px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: #bdc3c7;
+        }
+
+        input[type="range"] {
+            width: 100%;
+            height: 6px;
+            border-radius: 3px;
+            background: #34495e;
+            outline: none;
+            -webkit-appearance: none;
+        }
+
+            input[type="range"]::-webkit-slider-thumb {
+                -webkit-appearance: none;
+                width: 18px;
+                height: 18px;
+                border-radius: 50%;
+                background: #3498db;
+                cursor: pointer;
+            }
+
+        .value-display {
+            text-align: center;
+            font-size: 0.9rem;
+            color: #95a5a6;
+            margin-top: 5px;
+        }
+
+        .legend {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-top: 10px;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .legend-color {
+            width: 30px;
+            height: 8px;
+            border-radius: 2px;
+        }
+
+        .legend-label {
+            font-size: 0.9rem;
+            color: #ecf0f1;
+        }
+
+        button {
+            background: linear-gradient(90deg, #3498db, #2980b9);
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.3s;
+            width: 100%;
+            margin-top: 10px;
+            font-size: 1rem;
+        }
+
+            button:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            }
+
+        .info-box {
+            background: rgba(52, 152, 219, 0.2);
+            border-left: 4px solid #3498db;
+            padding: 15px;
+            margin-top: 20px;
+            border-radius: 4px;
+            font-size: 0.9rem;
+            line-height: 1.5;
+        }
+
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+            font-size: 0.85rem;
+        }
+
+            .data-table th, .data-table td {
+                padding: 8px 12px;
+                text-align: left;
+                border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            }
+
+            .data-table th {
+                background: rgba(0, 0, 0, 0.2);
+                color: #3498db;
+            }
+
+            .data-table tr:hover {
+                background: rgba(255, 255, 255, 0.05);
+            }
+
+        .stats {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .stat-card {
+            background: rgba(0, 0, 0, 0.2);
+            padding: 15px;
+            border-radius: 6px;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 1.8rem;
+            font-weight: bold;
+            color: #2ecc71;
+            margin-bottom: 5px;
+        }
+
+        .stat-label {
+            font-size: 0.8rem;
+            color: #bdc3c7;
+        }
+
+        footer {
+            text-align: center;
+            padding: 20px;
+            color: #95a5a6;
+            font-size: 0.9rem;
+        }
+
+        /* Custom CSS for the From-To labels */
+        .from-to-label {
+            background: rgba(52, 73, 94, 0.85);
+            color: white;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            font-weight: bold;
+            white-space: nowrap;
+            border: 1px solid #3498db;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+        }
+
+        .line-label {
+            background: rgba(44, 62, 80, 0.9);
+            color: white;
+            padding: 3px 6px;
+            border-radius: 3px;
+            font-size: 0.75rem;
+            font-weight: bold;
+            border: 1px solid #2ecc71;
+            transform: translateY(-50%);
+        }
+
+        /* Animation for traffic movement */
+        @@keyframes pulse {
+            0% {
+                /* opacity: 0.3; */
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 1;
+            }
+
+            100% {
+                /* opacity: 0.3; */
+                opacity: 1;
+            }
+        }
+
+        .traffic-pulse {
+            animation: pulse 2s infinite;
+        }
+
+        .moving-vehicle {
+            background: #f1c40f;
+            border-radius: 50%;
+            position: absolute;
+            box-shadow: 0 0 10px #f1c40f;
+            z-index: 1000;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>OTD Lines with Traffic Animations</h1>
+            <p class="subtitle">Interactive visualization with From-To labels and animated traffic movement</p>
+        </header>
+
+        <div class="content">
+            <div id="map-container">
+                <div id="map"></div>
+            </div>
+
+            <div class="panel">
+                <h2>Controls & Information</h2>
+
+                <div class="control-group">
+                    <h3>Line Thickness Settings</h3>
+
+                    <div class="slider-container">
+                        <label for="thickness-scale">Thickness Scale</label>
+                        <input type="range" id="thickness-scale" min="1" max="10" value="5">
+                        <div class="value-display" id="thickness-value">5x</div>
+                    </div>
+
+                    <div class="slider-container">
+                        <label for="opacity">Line Opacity</label>
+                        <input type="range" id="opacity" min="0" max="100" value="80">
+                        <div class="value-display" id="opacity-value">80%</div>
+                    </div>
+                </div>
+
+                <div class="control-group">
+                    <h3>Animation Controls</h3>
+
+                    <div class="slider-container">
+                        <label for="animation-speed">Animation Speed</label>
+                        <input type="range" id="animation-speed" min="1" max="10" value="5">
+                        <div class="value-display" id="speed-value">Medium</div>
+                    </div>
+
+                    <div class="slider-container">
+                        <label for="vehicle-density">Vehicle Density</label>
+                        <input type="range" id="vehicle-density" min="1" max="10" value="5">
+                        <div class="value-display" id="density-value">Medium</div>
+                    </div>
+                </div>
+
+                <div class="control-group">
+                    <h3>Traffic Volume Legend</h3>
+                    <div class="legend">
+                        <div class="legend-item">
+                            <div class="legend-color" style="background-color: #2ecc71;"></div>
+                            <div class="legend-label">Low Volume (0-2)</div>
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-color" style="background-color: #f39c12;"></div>
+                            <div class="legend-label">Medium Volume (3-5)</div>
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-color" style="background-color: #e74c3c;"></div>
+                            <div class="legend-label">High Volume (6+)</div>
+                        </div>
+                    </div>
+                </div>
+
+                <button id="update-volume">Update Traffic Volume</button>
+                <button id="toggle-animation">Pause Animations</button>
+
+                <div class="info-box">
+                    <strong>How it works:</strong> This visualization uses your OTD data to display origin-to-destination lines.
+                    Line thickness represents traffic volume, and color indicates congestion level. Animated vehicles show traffic flow direction and intensity.
+                </div>
+
+                <div class="stats">
+                    <div class="stat-card">
+                        <div class="stat-value" id="total-routes">6</div>
+                        <div class="stat-label">Total Routes</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="active-channels">4</div>
+                        <div class="stat-label">Active Channels</div>
+                    </div>
+                </div>
+
+                <h3 style="margin-top: 25px;">Route Data</h3>
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>From</th>
+                            <th>To</th>
+                            <th>Channel</th>
+                            <th>Volume</th>
+                        </tr>
+                    </thead>
+                    <tbody id="route-table">
+                        <!-- Table rows will be populated by JavaScript -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <footer>
+            <p>OTD Lines Visualization | Created with Leaflet</p>
+        </footer>
+    </div>
+
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+    <script>
+        // Your OTD Data with updated coordinates
+        const odData = [
+            { from: "A", latFrom: 30.1798, lngFrom: 66.9750, to: "B", channelId: 5, latTo: 30.2000, lngTo: 67.0100, distance: "10 km", count: 0 },
+            { from: "B", latFrom: 30.2000, lngFrom: 67.0100, to: "C", channelId: 6, latTo: 30.2500, lngTo: 67.0500, distance: "15 km", count: 0 },
+            { from: "C", latFrom: 30.2500, lngFrom: 67.0500, to: "A", channelId: 7, latTo: 30.1798, lngTo: 66.9750, distance: "18 km", count: 0 },
+            { from: "C", latFrom: 30.3000, lngFrom: 67.1000, to: "B", channelId: 8, latTo: 30.2000, lngTo: 67.0100, distance: "12 km", count: 0 },
+            { from: "D", latFrom: 30.3500, lngFrom: 67.2000, to: "No to point", channelId: 8, latTo: 30.2000, lngTo: 67.0100, distance: "12 km", count: 0 },
+            { from: "E", latFrom: 30.4500, lngFrom: 67.3500, to: "No to Point", channelId: 8, latTo: 30.2000, lngTo: 67.0100, distance: "12 km", count: 0 }
+        ];
+
+        // Initialize the map
+        const map = L.map('map').setView([30.3, 67.1], 10);
+
+        // Add OpenStreetMap tiles
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        }).addTo(map);
+
+        // Animation control variables
+        let animationRunning = true;
+        let animationSpeed = 5;
+        let vehicleDensity = 5;
+        let movingVehicles = [];
+
+        // Function to get color based on traffic volume
+        function getTrafficColor(count) {
+            if (count < 3) {
+                return '#2ecc71'; // Green for low volume
+            } else if (count < 6) {
+                return '#f39c12'; // Orange for medium volume
+            } else {
+                return '#e74c3c'; // Red for high volume
+            }
+        }
+
+        // Function to calculate midpoint between two coordinates
+        function getMidpoint(lat1, lng1, lat2, lng2) {
+            return [
+                (lat1 + lat2) / 2,
+                (lng1 + lng2) / 2
+            ];
+        }
+
+        // Function to calculate a point along a line at a specific percentage
+        function getPointAlongLine(lat1, lng1, lat2, lng2, percentage) {
+            return [
+                lat1 + (lat2 - lat1) * percentage,
+                lng1 + (lng2 - lng1) * percentage
+            ];
+        }
+
+        // Function to create moving vehicles
+        function createMovingVehicles() {
+            // Clear existing vehicles
+            movingVehicles.forEach(vehicle => {
+                if (vehicle.marker) map.removeLayer(vehicle.marker);
+            });
+            movingVehicles = [];
+
+            // Create vehicles for each route based on traffic volume and density
+            odData.forEach(route => {
+                const numVehicles = Math.max(1, Math.floor(route.count * vehicleDensity / 5));
+
+                for (let i = 0; i < numVehicles; i++) {
+                    // Random starting position along the route
+                    const startPos = Math.random();
+
+                    const vehicle = {
+                        route: route,
+                        position: startPos,
+                        direction: 1, // 1 for forward, -1 for reverse
+                        speed: (0.002 + Math.random() * 0.003) * (animationSpeed / 5),
+                        marker: null
+                    };
+
+                    // Create the vehicle marker
+                    const initialPos = getPointAlongLine(
+                        route.latFrom, route.lngFrom,
+                        route.latTo, route.lngTo,
+                        startPos
+                    );
+
+                    vehicle.marker = L.circleMarker(initialPos, {
+                        color: '#f1c40f',
+                        fillColor: '#f1c40f',
+                        fillOpacity: 0.9,
+                        radius: 4,
+                        weight: 2
+                    }).addTo(map);
+
+                    movingVehicles.push(vehicle);
+                }
+            });
+        }
+
+        // Function to animate vehicles
+        function animateVehicles() {
+            if (!animationRunning) return;
+
+            movingVehicles.forEach(vehicle => {
+                // Update position
+                vehicle.position += vehicle.speed * vehicle.direction;
+
+                // Reverse direction if at the end of the route
+                if (vehicle.position >= 1) {
+                    vehicle.position = 1;
+                    vehicle.direction = -1;
+                } else if (vehicle.position <= 0) {
+                    vehicle.position = 0;
+                    vehicle.direction = 1;
+                }
+
+                // Calculate new position
+                const newPos = getPointAlongLine(
+                    vehicle.route.latFrom, vehicle.route.lngFrom,
+                    vehicle.route.latTo, vehicle.route.lngTo,
+                    vehicle.position
+                );
+
+                // Update marker position
+                vehicle.marker.setLatLng(newPos);
+            });
+
+            // Continue animation
+            requestAnimationFrame(animateVehicles);
+        }
+
+        // Function to render OTD data on the map
+        function renderOTDData() {
+            // Clear existing OTD layers
+            if (window.otdLayer) {
+                map.removeLayer(window.otdLayer);
+            }
+
+            // Clear existing markers
+            if (window.markersLayer) {
+                map.removeLayer(window.markersLayer);
+            }
+
+            // Clear existing labels
+            if (window.labelsLayer) {
+                map.removeLayer(window.labelsLayer);
+            }
+
+            // Create new layer groups
+            window.otdLayer = L.layerGroup().addTo(map);
+            window.markersLayer = L.layerGroup().addTo(map);
+            window.labelsLayer = L.layerGroup().addTo(map);
+
+            // Get current settings
+            const thicknessScale = parseInt(document.getElementById('thickness-scale').value);
+            const opacity = parseInt(document.getElementById('opacity').value) / 100;
+
+            // Track unique locations for markers
+            const locations = new Map();
+
+            // Add each OTD route to the map
+            odData.forEach(route => {
+                // Calculate line weight based on count and scale
+                // We add 1 to avoid zero-width lines when count is 0
+                const weight = Math.max(2, Math.min(20, (route.count + 1) * thicknessScale));
+
+                // Create the polyline with pulsing animation for high traffic
+                const polylineOptions = {
+                    color: getTrafficColor(route.count),
+                    weight: weight,
+                    opacity: opacity,
+                    lineCap: 'round',
+                    lineJoin: 'round'
+                };
+
+                // Add pulsing animation for medium and high traffic
+                if (route.count >= 3) {
+                    polylineOptions.className = 'traffic-pulse';
+                }
+
+                const polyline = L.polyline([
+                    [route.latFrom, route.lngFrom],
+                    [route.latTo, route.lngTo]
+                ], polylineOptions).addTo(window.otdLayer);
+
+                // Add From-To label in the middle of the line
+                const midpoint = getMidpoint(route.latFrom, route.lngFrom, route.latTo, route.lngTo);
+                const lineLabel = L.marker(midpoint, {
+                    icon: L.divIcon({
+                        className: 'line-label',
+                        html: `${route.from} → ${route.to}`,
+                        iconSize: [60, 20],
+                        iconAnchor: [30, 10]
+                    })
+                }).addTo(window.labelsLayer);
+
+                // Add popup with route info
+                polyline.bindPopup(`
+                    <div style="min-width: 220px;">
+                        <h3>Route: ${route.from} → ${route.to}</h3>
+                        <p><strong>Channel ID:</strong> ${route.channelId}</p>
+                        <p><strong>Distance:</strong> ${route.distance}</p>
+                        <p><strong>Traffic Volume:</strong> ${route.count}</p>
+                        <p><strong>Status:</strong> <span style="color:${getTrafficColor(route.count)}">${route.count < 3 ? 'Low' : route.count < 6 ? 'Medium' : 'High'} Volume</span></p>
+                    </div>
+                `);
+
+                // Add locations to our map for markers
+                if (!locations.has(route.from)) {
+                    locations.set(route.from, {
+                        lat: route.latFrom,
+                        lng: route.lngFrom,
+                        connections: []
+                    });
+                }
+
+                if (!locations.has(route.to)) {
+                    locations.set(route.to, {
+                        lat: route.latTo,
+                        lng: route.lngTo,
+                        connections: []
+                    });
+                }
+
+                // Add connection information
+                locations.get(route.from).connections.push(route.to);
+            });
+
+            // Add markers for each location with From-To labels
+            locations.forEach((location, name) => {
+                // Use a custom marker with From label
+                const marker = L.circleMarker([location.lat, location.lng], {
+                    color: '#3498db',
+                    fillColor: '#2980b9',
+                    fillOpacity: 0.8,
+                    radius: 10,
+                    weight: 3
+                }).addTo(window.markersLayer);
+
+                // Add From label above the marker
+                const fromLabel = L.marker([location.lat + 0.005, location.lng], {
+                    icon: L.divIcon({
+                        className: 'from-to-label',
+                        html: `From: ${name}`,
+                        iconSize: [70, 25],
+                        iconAnchor: [35, 12]
+                    })
+                }).addTo(window.labelsLayer);
+
+                marker.bindPopup(`
+                    <div style="min-width: 180px;">
+                        <h3>Location: ${name}</h3>
+                        <p><strong>Coordinates:</strong> ${location.lat.toFixed(4)}, ${location.lng.toFixed(4)}</p>
+                        <p><strong>Connections:</strong> ${location.connections.join(', ') || 'None'}</p>
+                    </div>
+                `);
+
+                // Add To labels for destinations
+                location.connections.forEach(dest => {
+                    const destLocation = locations.get(dest);
+                    if (destLocation) {
+                        const toLabel = L.marker([destLocation.lat - 0.005, destLocation.lng], {
+                            icon: L.divIcon({
+                                className: 'from-to-label',
+                                html: `To: ${dest}`,
+                                iconSize: [60, 25],
+                                iconAnchor: [30, 12]
+                            })
+                        }).addTo(window.labelsLayer);
+                    }
+                });
+            });
+
+            // Update the route table
+            updateRouteTable();
+
+            // Update stats
+            updateStats();
+
+            // Create moving vehicles
+            createMovingVehicles();
+        }
+
+        // Function to update the route table
+        function updateRouteTable() {
+            const tableBody = document.getElementById('route-table');
+            tableBody.innerHTML = '';
+
+            odData.forEach(route => {
+                const row = document.createElement('tr');
+
+                row.innerHTML = `
+                    <td>${route.from}</td>
+                    <td>${route.to}</td>
+                    <td>${route.channelId}</td>
+                    <td style="color: ${getTrafficColor(route.count)}; font-weight: bold;">${route.count}</td>
+                `;
+
+                tableBody.appendChild(row);
+            });
+        }
+
+        // Function to update statistics
+        function updateStats() {
+            document.getElementById('total-routes').textContent = odData.length;
+
+            const uniqueChannels = new Set(odData.map(route => route.channelId)).size;
+            document.getElementById('active-channels').textContent = uniqueChannels;
+        }
+
+        // Function to generate random traffic counts
+        function generateTrafficCounts() {
+            odData.forEach(route => {
+                // Generate a random count between 0 and 8
+                route.count = Math.floor(Math.random() * 9);
+            });
+
+            // Re-render the data
+            renderOTDData();
+        }
+
+        // Function to update animation speed display
+        function updateSpeedDisplay() {
+            const speedValue = document.getElementById('speed-value');
+            if (animationSpeed <= 3) {
+                speedValue.textContent = 'Slow';
+            } else if (animationSpeed <= 7) {
+                speedValue.textContent = 'Medium';
+            } else {
+                speedValue.textContent = 'Fast';
+            }
+        }
+
+        // Function to update density display
+        function updateDensityDisplay() {
+            const densityValue = document.getElementById('density-value');
+            if (vehicleDensity <= 3) {
+                densityValue.textContent = 'Low';
+            } else if (vehicleDensity <= 7) {
+                densityValue.textContent = 'Medium';
+            } else {
+                densityValue.textContent = 'High';
+            }
+        }
+
+        // Set up event listeners for controls
+        document.getElementById('thickness-scale').addEventListener('input', function() {
+            document.getElementById('thickness-value').textContent = this.value + 'x';
+            renderOTDData();
+        });
+
+        document.getElementById('opacity').addEventListener('input', function() {
+            document.getElementById('opacity-value').textContent = this.value + '%';
+            renderOTDData();
+        });
+
+        document.getElementById('animation-speed').addEventListener('input', function() {
+            animationSpeed = parseInt(this.value);
+            updateSpeedDisplay();
+            createMovingVehicles();
+        });
+
+        document.getElementById('vehicle-density').addEventListener('input', function() {
+            vehicleDensity = parseInt(this.value);
+            updateDensityDisplay();
+            createMovingVehicles();
+        });
+
+        document.getElementById('update-volume').addEventListener('click', generateTrafficCounts);
+
+        document.getElementById('toggle-animation').addEventListener('click', function() {
+            animationRunning = !animationRunning;
+            this.textContent = animationRunning ? 'Pause Animations' : 'Resume Animations';
+            if (animationRunning) {
+                animateVehicles();
+            }
+        });
+
+        // Initialize the visualization
+        generateTrafficCounts();
+        updateSpeedDisplay();
+        updateDensityDisplay();
+        animateVehicles();
+    </script>
+</body>
+</html>
