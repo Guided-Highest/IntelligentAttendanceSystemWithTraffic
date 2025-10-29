@@ -287,12 +287,59 @@
             border: 1px solid #2ecc71;
             transform: translateY(-50%);
         }
+        /* Directional arrow styles */
+        .arrow-icon {
+            background: transparent;
+            border: none;
+        }
+
+        .arrow-head {
+            width: 12px;
+            height: 12px;
+            border-top: 5px solid purple;
+            border-left: 5px solid purple;
+            transform: rotate(-150deg);
+            display: inline-block;
+        }
+
+        .arrow-line {
+            width: 2px;
+            height: 20px;
+            background: #3498db;
+            position: absolute;
+            top: 5px;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+
+        .flow-arrow {
+            background: rgba(52, 152, 219, 0.7);
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 12px;
+            box-shadow: 0 0 5px rgba(0, 0, 0, 0.5);
+        }
+
+        .flow-indicator {
+            position: absolute;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
 
         /* Animation for traffic movement */
         @@keyframes pulse {
             0% {
-                /* opacity: 0.3; */
-                opacity: 1;
+                opacity: 0.3;
             }
 
             50% {
@@ -300,12 +347,11 @@
             }
 
             100% {
-                /* opacity: 0.3; */
-                opacity: 1;
+                opacity: 0.3;
             }
         }
 
-        .traffic-pulse {
+        .traffic-pulse-s {
             animation: pulse 2s infinite;
         }
 
@@ -397,6 +443,10 @@
                         <input type="range" id="vehicle-density" min="1" max="10" value="5">
                         <div class="value-display" id="density-value">Medium</div>
                     </div>
+                    <div class="slider-container">
+                        <label for="arrow-density">Arrow Density</label>
+                        <input type="range" id="arrow-density" min="1" max="10" value="5">
+                    </div>
                 </div>
 
                 <div class="control-group">
@@ -487,6 +537,7 @@
              }
          }
         function showTrafficToast(message, type) {
+            console.log('Traffic Toast:', message);
              // Simple notification - you can replace with a proper toast library
              const alertClass = `alert alert-${type} alert-dismissible fade show`;
              const toastHtml = `
@@ -513,7 +564,8 @@
                  // Traffic-specific event handlers
                  trafficConnection.on("TrafficConnectionStatus", (status) => {
                      updateTrafficConnectionStatus(true);
-                     showTrafficToast(status.Message, 'success');
+                     console.log('Traffic Connection Status:', status);
+                     showTrafficToast(status.message, 'success');
                  });
 
                  trafficConnection.on("VehicleCountUpdate", (countData) => {
@@ -566,14 +618,14 @@
          }
         // Your OTD Data with updated coordinates
         const odData = [
-            { title:"Infront of DHA Office", from: "A", latFrom: 30.2195812, lngFrom: 67.0056186, to: "B", channelId: 5, latTo:30.255811, lngTo: 66.967975, distance: "10 km", count: 0 },
-            { title:"Pedestrian Bridge", from: "B", latFrom: 30.255811, lngFrom: 66.967975, to: "C", channelId: 6, latTo: 30.264083, lngTo: 66.949583, distance: "15 km", count: 0 },
-            { title:"Tor Nasir Chowk Baleli", from: "C", latFrom: 30.264083, lngFrom: 66.949583, to: "N/P", channelId: 7, latTo: 30.265964, lngTo: 66.944648, distance: "18 km", count: 0 },
+            { title:"Infront of DHA Office", from: "A", latFrom: 30.2195812, lngFrom: 67.0056186, to: "B", channelId: 21, latTo:30.255811, lngTo: 66.967975, distance: "10 km", count: 0 },
+            { title:"Pedestrian Bridge", from: "B", latFrom: 30.255811, lngFrom: 66.967975, to: "C", channelId: 25, latTo: 30.264083, lngTo: 66.949583, distance: "15 km", count: 0 },
+            { title:"Tor Nasir Chowk Baleli", from: "C", latFrom: 30.264083, lngFrom: 66.949583, to: "N/P", channelId: 18, latTo: 30.265964, lngTo: 66.944648, distance: "18 km", count: 0 },
 
 
-            { title:"DHA Office To Quetta City", from: "B", latFrom: 30.255811, lngFrom: 66.967975, to: "A", channelId: 8, latTo:30.2196762, lngTo: 67.0062439, distance: "10 km", count: 0 },
-            { title:"Pedestrian Bridge TO DHA Office", from: "C", latFrom: 30.264083, lngFrom: 66.949583, to: "B", channelId: 9, latTo: 30.255811, lngTo: 66.967975, distance: "15 km", count: 0 },
-            { title:"Tor Nasir Chowk To Airport", from: "N/P", latFrom: 30.265964, lngFrom: 66.944648, to: "C", channelId: 10, latTo: 30.264083, lngTo: 66.949583, distance: "18 km", count: 0 }
+            { title:"DHA Office To Quetta City", from: "B", latFrom: 30.255811, lngFrom: 66.967975, to: "A", channelId: 20, latTo:30.2196762, lngTo: 67.0062439, distance: "10 km", count: 0 },
+            { title:"Pedestrian Bridge TO DHA Office", from: "C", latFrom: 30.264083, lngFrom: 66.949583, to: "B", channelId: 24, latTo: 30.255811, lngTo: 66.967975, distance: "15 km", count: 0 },
+            { title:"Tor Nasir Chowk To Airport", from: "N/P", latFrom: 30.265964, lngFrom: 66.944648, to: "C", channelId: 19, latTo: 30.264083, lngTo: 66.949583, distance: "18 km", count: 0 }
         ];
 
         // Initialize the map
@@ -588,6 +640,7 @@
         let animationRunning = true;
         let animationSpeed = 5;
         let vehicleDensity = 5;
+        let arrowDensity = 5;
         let movingVehicles = [];
 
         // Function to get color based on traffic volume
@@ -615,6 +668,69 @@
                 lat1 + (lat2 - lat1) * percentage,
                 lng1 + (lng2 - lng1) * percentage
             ];
+        }
+
+         // Function to calculate the angle between two points for directional arrows
+        function calculateAngle(lat1, lng1, lat2, lng2) {
+            const dx = lng2 - lng1;
+            const dy = lat2 - lat1;
+            return Math.atan2(dy, dx) * 180 / Math.PI;
+        }
+
+        // Function to create multiple directional arrows along each route
+        function createDirectionalArrows() {
+            // Clear existing arrows
+            if (window.arrowsLayer) {
+                map.removeLayer(window.arrowsLayer);
+            }
+
+            // Create new layer for arrows
+            window.arrowsLayer = L.layerGroup().addTo(map);
+
+            // Add arrows for each route
+            odData.forEach(route => {
+                // Calculate number of arrows based on density setting
+                const numArrows = Math.max(2, Math.floor(arrowDensity * 2));
+
+                // Create multiple arrows along the route
+                for (let i = 1; i <= numArrows; i++) {
+                    // Calculate position for the arrow (evenly spaced along the route)
+                    const arrowPos = getPointAlongLine(
+                        route.latFrom, route.lngFrom,
+                        route.latTo, route.lngTo,
+                        i / (numArrows + 1)
+                    );
+
+                    // Calculate the angle for the arrow
+                    const angle = calculateAngle(
+                        route.latFrom, route.lngFrom,
+                        route.latTo, route.lngTo
+                    );
+
+                    // Create the arrow marker
+                    const arrow = L.marker(arrowPos, {
+                        icon: L.divIcon({
+                            className: 'arrow-icon',
+                            html: `
+                                <div class="direction-arrow" style="transform: rotate(${angle}deg);">
+                                    <div class="arrow-head"></div>
+                                </div>
+                            `,
+                            iconSize: [16, 16],
+                            iconAnchor: [8, 8]
+                        })
+                    }).addTo(window.arrowsLayer);
+
+                    // Add popup with direction info
+                    arrow.bindPopup(`
+                        <div style="min-width: 180px;">
+                            <h3>Direction: ${route.from} → ${route.to}</h3>
+                            <p><strong>Traffic Volume:</strong> ${route.count}</p>
+                            <p><strong>Distance:</strong> ${route.distance}</p>
+                        </div>
+                    `);
+                }
+            });
         }
 
         // Function to create moving vehicles
@@ -840,7 +956,8 @@
 
             // Update stats
             updateStats();
-
+            // Create directional arrows
+            createDirectionalArrows();
             // Create moving vehicles
             createMovingVehicles();
         }
@@ -930,7 +1047,10 @@
             updateDensityDisplay();
             createMovingVehicles();
         });
-
+          document.getElementById('arrow-density').addEventListener('input', function() {
+            arrowDensity = parseInt(this.value);
+            createDirectionalArrows();
+        });
         document.getElementById('update-volume').addEventListener('click', generateTrafficCounts);
 
         document.getElementById('toggle-animation').addEventListener('click', function() {
