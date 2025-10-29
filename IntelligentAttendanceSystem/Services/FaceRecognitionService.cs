@@ -670,26 +670,26 @@ namespace IntelligentAttendanceSystem.Services
                     EventAction = info.bEventAction == 1 ? "Start" : "Stop"
                 };
                 // Extract images using available fields
-                if (IntPtr.Zero != pBuffer && dwBufSize > 0)
-                {
-                    // Extract scene image if available
-                    if (info.bSceneImage && info.stuSceneImage.nLength > 0 && info.stuSceneImage.nLength <= dwBufSize)
-                    {
-                        trafficEvent.GlobalImageBase64 = ExtractImageFromBuffer(
-                            pBuffer, info.stuSceneImage.nOffSet, info.stuSceneImage.nLength);
-                    }
+                //if (IntPtr.Zero != pBuffer && dwBufSize > 0)
+                //{
+                //    // Extract scene image if available
+                //    if (info.bSceneImage && info.stuSceneImage.nLength > 0 && info.stuSceneImage.nLength <= dwBufSize)
+                //    {
+                //        trafficEvent.GlobalImageBase64 = ExtractImageFromBuffer(
+                //            pBuffer, info.stuSceneImage.nOffSet, info.stuSceneImage.nLength);
+                //    }
 
-                    // Extract object image if available (from stuObject)
-                    if (info.stuObject.bPicEnble == 1 && info.stuObject.stPicInfo.dwFileLenth > 0 && info.stuObject.stPicInfo.dwFileLenth <= dwBufSize)
-                    {
-                        trafficEvent.VehicleInfo.VehicleImageBase64 = ExtractImageFromBuffer(
-                            pBuffer, info.stuObject.stPicInfo.dwOffSet, info.stuObject.stPicInfo.dwFileLenth);
-                    }
+                //    // Extract object image if available (from stuObject)
+                //    if (info.stuObject.bPicEnble == 1 && info.stuObject.stPicInfo.dwFileLenth > 0 && info.stuObject.stPicInfo.dwFileLenth <= dwBufSize)
+                //    {
+                //        trafficEvent.VehicleInfo.VehicleImageBase64 = ExtractImageFromBuffer(
+                //            pBuffer, info.stuObject.stPicInfo.dwOffSet, info.stuObject.stPicInfo.dwFileLenth);
+                //    }
 
-                    // Try to extract plate image if available
-                    // Note: You might need to check if plate image info is available in your SDK
-                    trafficEvent.VehicleInfo.PlateImageBase64 = ExtractPlateImage(info, pBuffer, dwBufSize);
-                }
+                //    // Try to extract plate image if available
+                //    // Note: You might need to check if plate image info is available in your SDK
+                //    trafficEvent.VehicleInfo.PlateImageBase64 = ExtractPlateImage(info, pBuffer, dwBufSize);
+                //}
 
                 // Send via SignalR
                 await SendSignalRMessageSafe("TrafficMonitoring", "TrafficJunctionEvent", trafficEvent);

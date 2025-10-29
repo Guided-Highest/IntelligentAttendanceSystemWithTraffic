@@ -6,7 +6,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>OTD Lines with Traffic Animations</title>
+    <title>OD-Matrix of Airport Road Quetta</title>
 
     <!-- Leaflet CSS -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
@@ -321,8 +321,8 @@
 <body>
     <div class="container">
         <header>
-            <h1>OTD Lines with Traffic Animations</h1>
-            <p class="subtitle">Interactive visualization with From-To labels and animated traffic movement</p>
+            <h1>OD-Matrix of Airport Road Quetta</h1>
+            <p class="subtitle">One Hour Traffic Count (Customizable)</p>
         </header>
 
         <div class="content">
@@ -332,14 +332,48 @@
 
             <div class="panel">
                 <h2>Controls & Information</h2>
+                <div class="control-group">
+                    <div id="trafficConnectionPanel" class="alert alert-info mb-4">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <i class="fas fa-signal"></i>
+                                <strong>Real-time Traffic Monitoring</strong>
+                                <span id="connectionDetails" class="ms-2">Waiting for data...</span>
+                            </div>
+                            <div>
+                                <button id="trafficReconnectBtn" class="btn btn-sm btn-outline-primary me-2">
+                                    <i class="fas fa-sync-alt"></i> Reconnect
+                                </button>
+                                <button id="trafficDisconnectBtn" class="btn btn-sm btn-outline-secondary">
+                                    <i class="fas fa-plug"></i> Disconnect
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="control-group">
+                    <div class="card">
+                        <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                            <h4 class="mb-0"><i class="fas fa-traffic-light"></i> Traffic Monitoring Dashboard</h4>
+                            <div>
+                                <span id="trafficConnectionStatus" class="badge bg-success">
+                                    <i class="fas fa-circle"></i> Connected
+                                </span>
+                                <button id="refreshStats" class="btn btn-sm btn-light ms-2">
+                                    <i class="fas fa-sync-alt"></i> Refresh
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
 
                 <div class="control-group">
                     <h3>Line Thickness Settings</h3>
 
                     <div class="slider-container">
                         <label for="thickness-scale">Thickness Scale</label>
-                        <input type="range" id="thickness-scale" min="1" max="10" value="5">
-                        <div class="value-display" id="thickness-value">5x</div>
+                        <input type="range" id="thickness-scale" min="1" max="10" value="2">
+                        <div class="value-display" id="thickness-value">2x</div>
                     </div>
 
                     <div class="slider-container">
@@ -370,15 +404,15 @@
                     <div class="legend">
                         <div class="legend-item">
                             <div class="legend-color" style="background-color: #2ecc71;"></div>
-                            <div class="legend-label">Low Volume (0-2)</div>
+                            <div class="legend-label">Low Volume (0-500)</div>
                         </div>
                         <div class="legend-item">
                             <div class="legend-color" style="background-color: #f39c12;"></div>
-                            <div class="legend-label">Medium Volume (3-5)</div>
+                            <div class="legend-label">Medium Volume (501-1000)</div>
                         </div>
                         <div class="legend-item">
                             <div class="legend-color" style="background-color: #e74c3c;"></div>
-                            <div class="legend-label">High Volume (6+)</div>
+                            <div class="legend-label">High Volume (1000+)</div>
                         </div>
                     </div>
                 </div>
@@ -406,6 +440,7 @@
                 <table class="data-table">
                     <thead>
                         <tr>
+                            <th>Title</th>
                             <th>From</th>
                             <th>To</th>
                             <th>Channel</th>
@@ -426,16 +461,119 @@
 
     <!-- Leaflet JS -->
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/7.0.10/signalr.min.js"></script>
 
     <script>
+         let trafficConnection;
+         let detectionCounter = 0;
+         let vehicleStats = {
+             totalToday: 0,
+             currentHour: 0,
+             types: {},
+             directions: {}
+         };
+         function updateTrafficConnectionStatus(connected) {
+             const statusElement = document.getElementById('trafficConnectionStatus');
+             const detailsElement = document.getElementById('connectionDetails');
+
+             if (connected) {
+                 statusElement.innerHTML = '<i class="fas fa-circle"></i> Connected';
+                 statusElement.className = 'badge bg-success';
+                 detailsElement.textContent = 'Receiving real-time traffic data';
+             } else {
+                 statusElement.innerHTML = '<i class="fas fa-circle"></i> Disconnected';
+                 statusElement.className = 'badge bg-danger';
+                 detailsElement.textContent = 'Connection lost';
+             }
+         }
+        function showTrafficToast(message, type) {
+             // Simple notification - you can replace with a proper toast library
+             const alertClass = `alert alert-${type} alert-dismissible fade show`;
+             const toastHtml = `
+                 <div class="${alertClass}" role="alert">
+                     <strong>Traffic Monitoring:</strong> ${message}
+                     <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                 </div>
+             `;
+
+             // Prepend to the connection panel
+             const connectionPanel = document.getElementById('trafficConnectionPanel');
+             connectionPanel.insertAdjacentHTML('afterend', toastHtml);
+         }
+         // Initialize Traffic Monitoring SignalR connection
+         async function initializeTrafficMonitoring() {
+             try {
+                 // Use the same hub connection for both face recognition and traffic monitoring
+                 trafficConnection = new signalR.HubConnectionBuilder()
+                     .withUrl("/faceRecognitionHub")
+                     .withAutomaticReconnect()
+                     .configureLogging(signalR.LogLevel.Warning)
+                     .build();
+
+                 // Traffic-specific event handlers
+                 trafficConnection.on("TrafficConnectionStatus", (status) => {
+                     updateTrafficConnectionStatus(true);
+                     showTrafficToast(status.Message, 'success');
+                 });
+
+                 trafficConnection.on("VehicleCountUpdate", (countData) => {
+                     console.log('Vehicle Count Update:', countData);
+                 });
+
+                 trafficConnection.on("VehicleDetected", (vehicleData) => {
+                     updateDetectionCounter(vehicleData.junctionId);
+                 });
+
+                 trafficConnection.onreconnecting(() => {
+                     updateTrafficConnectionStatus(false);
+                     showTrafficToast('Traffic connection lost. Reconnecting...', 'warning');
+                 });
+
+                 trafficConnection.onreconnected(() => {
+                     updateTrafficConnectionStatus(true);
+                     showTrafficToast('Traffic connection restored', 'success');
+                     // Rejoin traffic monitoring group
+                     trafficConnection.invoke("JoinTrafficMonitoringGroup");
+                 });
+
+                 trafficConnection.onclose(() => {
+                     updateTrafficConnectionStatus(false);
+                     showTrafficToast('Traffic connection closed', 'danger');
+                 });
+
+                 await trafficConnection.start();
+                 await trafficConnection.invoke("JoinTrafficMonitoringGroup");
+
+                 console.log('Traffic monitoring connected successfully');
+
+             } catch (err) {
+                 console.error('Traffic monitoring connection error:', err);
+                 showTrafficToast('Failed to connect to traffic monitoring', 'danger');
+             }
+         }
+          // Update detection counter
+         function updateDetectionCounter(channelId) {
+             console.log('Channel:', channelId);
+               // Find and update the specific flow
+               // const flow = odData.find(f => f.from === 'A' && f.to === 'B'&& f.channelId === channelId);
+               const flow = odData.find(f => f.channelId === channelId);
+               if (flow) {
+                   var fc=flow.count;
+                   fc=fc+1;
+                   flow.count = fc;
+                  generateTrafficCounts();
+               }
+         }
         // Your OTD Data with updated coordinates
         const odData = [
-            { from: "A", latFrom: 30.1798, lngFrom: 66.9750, to: "B", channelId: 5, latTo: 30.2000, lngTo: 67.0100, distance: "10 km", count: 0 },
-            { from: "B", latFrom: 30.2000, lngFrom: 67.0100, to: "C", channelId: 6, latTo: 30.2500, lngTo: 67.0500, distance: "15 km", count: 0 },
-            { from: "C", latFrom: 30.2500, lngFrom: 67.0500, to: "A", channelId: 7, latTo: 30.1798, lngTo: 66.9750, distance: "18 km", count: 0 },
-            { from: "C", latFrom: 30.3000, lngFrom: 67.1000, to: "B", channelId: 8, latTo: 30.2000, lngTo: 67.0100, distance: "12 km", count: 0 },
-            { from: "D", latFrom: 30.3500, lngFrom: 67.2000, to: "No to point", channelId: 8, latTo: 30.2000, lngTo: 67.0100, distance: "12 km", count: 0 },
-            { from: "E", latFrom: 30.4500, lngFrom: 67.3500, to: "No to Point", channelId: 8, latTo: 30.2000, lngTo: 67.0100, distance: "12 km", count: 0 }
+            { title:"Infront of DHA Office", from: "A", latFrom: 30.2195812, lngFrom: 67.0056186, to: "B", channelId: 5, latTo:30.255811, lngTo: 66.967975, distance: "10 km", count: 0 },
+            { title:"Pedestrian Bridge", from: "B", latFrom: 30.255811, lngFrom: 66.967975, to: "C", channelId: 6, latTo: 30.264083, lngTo: 66.949583, distance: "15 km", count: 0 },
+            { title:"Tor Nasir Chowk Baleli", from: "C", latFrom: 30.264083, lngFrom: 66.949583, to: "N/P", channelId: 7, latTo: 30.265964, lngTo: 66.944648, distance: "18 km", count: 0 },
+
+
+            { title:"DHA Office To Quetta City", from: "B", latFrom: 30.255811, lngFrom: 66.967975, to: "A", channelId: 8, latTo:30.2196762, lngTo: 67.0062439, distance: "10 km", count: 0 },
+            { title:"Pedestrian Bridge TO DHA Office", from: "C", latFrom: 30.264083, lngFrom: 66.949583, to: "B", channelId: 9, latTo: 30.255811, lngTo: 66.967975, distance: "15 km", count: 0 },
+            { title:"Tor Nasir Chowk To Airport", from: "N/P", latFrom: 30.265964, lngFrom: 66.944648, to: "C", channelId: 10, latTo: 30.264083, lngTo: 66.949583, distance: "18 km", count: 0 }
         ];
 
         // Initialize the map
@@ -454,9 +592,9 @@
 
         // Function to get color based on traffic volume
         function getTrafficColor(count) {
-            if (count < 3) {
+            if (count < 501) {
                 return '#2ecc71'; // Green for low volume
-            } else if (count < 6) {
+            } else if (count < 1001) {
                 return '#f39c12'; // Orange for medium volume
             } else {
                 return '#e74c3c'; // Red for high volume
@@ -716,6 +854,7 @@
                 const row = document.createElement('tr');
 
                 row.innerHTML = `
+                    <td>${route.title}</td>
                     <td>${route.from}</td>
                     <td>${route.to}</td>
                     <td>${route.channelId}</td>
@@ -736,10 +875,10 @@
 
         // Function to generate random traffic counts
         function generateTrafficCounts() {
-            odData.forEach(route => {
-                // Generate a random count between 0 and 8
-                route.count = Math.floor(Math.random() * 9);
-            });
+            // odData.forEach(route => {
+            //     // Generate a random count between 0 and 8
+            //     route.count = Math.floor(Math.random() * 9);
+            // });
 
             // Re-render the data
             renderOTDData();
@@ -802,11 +941,34 @@
             }
         });
 
-        // Initialize the visualization
-        generateTrafficCounts();
-        updateSpeedDisplay();
-        updateDensityDisplay();
-        animateVehicles();
+         // Event listeners
+         document.getElementById('refreshStats').addEventListener('click', () => {
+             if (trafficConnection && trafficConnection.state === signalR.HubConnectionState.Connected) {
+                 trafficConnection.invoke("TrafficPing").then(pong => {
+                     showTrafficToast(`Refreshed: ${pong}`, 'info');
+                 });
+             }
+         });
+
+         document.getElementById('trafficReconnectBtn').addEventListener('click', () => {
+             initializeTrafficMonitoring();
+         });
+
+         document.getElementById('trafficDisconnectBtn').addEventListener('click', () => {
+             if (trafficConnection) {
+                 trafficConnection.stop();
+             }
+         });
+
+        // Initialize when page loads
+         document.addEventListener('DOMContentLoaded', function() {
+             initializeTrafficMonitoring();
+             // Initialize the visualization
+             generateTrafficCounts();
+             updateSpeedDisplay();
+             updateDensityDisplay();
+             animateVehicles();
+         });
     </script>
 </body>
 </html>
