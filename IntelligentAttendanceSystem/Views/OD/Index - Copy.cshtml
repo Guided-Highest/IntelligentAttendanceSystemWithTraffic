@@ -175,21 +175,6 @@
             border-radius: 2px;
         }
 
-        .legend-color-low {
-            height: 2px !important;
-            background-color: #2ecc71;
-        }
-
-        .legend-color-medium {
-            height: 4px !important;
-            background-color: #f39c12;
-        }
-
-        .legend-color-high {
-            height: 6px !important;
-            background-color: #e74c3c;
-        }
-
         .legend-label {
             font-size: 0.9rem;
             color: #ecf0f1;
@@ -377,213 +362,6 @@
             box-shadow: 0 0 10px #f1c40f;
             z-index: 1000;
         }
-
-        /* NEW STYLES FOR FULL SCREEN AND FLOATING PANEL */
-
-        /* Full screen mode styles */
-        body.fullscreen-mode {
-            overflow: hidden;
-            padding: 0;
-        }
-
-            body.fullscreen-mode .container {
-                max-width: 100%;
-                padding: 0;
-                height: 100vh;
-            }
-
-            body.fullscreen-mode header {
-                display: none;
-            }
-
-            body.fullscreen-mode footer {
-                display: none;
-            }
-
-            body.fullscreen-mode .content {
-                height: 100vh;
-            }
-
-            body.fullscreen-mode #map-container {
-                border-radius: 0;
-                flex: 1;
-                height: 100vh;
-            }
-
-            body.fullscreen-mode .panel {
-                position: absolute;
-                top: 20px;
-                right: 20px;
-                z-index: 1000;
-                width: 350px;
-                max-height: calc(100vh - 40px);
-                background: rgba(30, 40, 50, 0.9);
-                backdrop-filter: blur(10px);
-                box-shadow: 0 4px 25px rgba(0, 0, 0, 0.4);
-            }
-
-        .fullscreen-btn {
-            position: absolute;
-            top: 20px;
-            right: 20px;
-            z-index: 1001;
-            background: rgba(30, 40, 50, 0.8);
-            color: white;
-            border: none;
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
-            transition: all 0.3s;
-        }
-
-            .fullscreen-btn:hover {
-                background: rgba(30, 40, 50, 0.95);
-                transform: scale(1.1);
-            }
-
-        body.fullscreen-mode .fullscreen-btn {
-            top: 20px;
-            right: 390px;
-        }
-
-        .panel-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 15px;
-            padding-bottom: 10px;
-            border-bottom: 2px solid #3498db;
-            cursor: move;
-        }
-
-        .close-btn {
-            background: none;
-            border: none;
-            color: #ecf0f1;
-            font-size: 1.2rem;
-            cursor: pointer;
-            width: 30px;
-            height: 30px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: background 0.3s;
-        }
-
-            .close-btn:hover {
-                background: rgba(255, 255, 255, 0.1);
-            }
-
-        /* Panel toggle button styles */
-        .panel-toggle {
-            position: absolute;
-            top: 20px;
-            right: 20px;
-            z-index: 999;
-            background: rgba(30, 40, 50, 0.9);
-            color: white;
-            border: none;
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            display: none;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
-            transition: all 0.3s;
-        }
-
-            .panel-toggle:hover {
-                background: rgba(30, 40, 50, 0.95);
-                transform: scale(1.1);
-            }
-
-        body.fullscreen-mode .panel-toggle {
-            display: flex;
-            top: 20px;
-            right: 70px;
-        }
-
-        /* Panel hidden state */
-        .panel.hidden {
-            display: none;
-        }
-
-        /* Zoom to area button */
-        .zoom-to-area-btn {
-            position: absolute;
-            top: 70px;
-            right: 20px;
-            z-index: 1001;
-            background: rgba(30, 40, 50, 0.8);
-            color: white;
-            border: none;
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
-            transition: all 0.3s;
-        }
-
-            .zoom-to-area-btn:hover {
-                background: rgba(30, 40, 50, 0.95);
-                transform: scale(1.1);
-            }
-
-        body.fullscreen-mode .zoom-to-area-btn {
-            top: 70px;
-            right: 390px;
-        }
-
-        /* Responsive adjustments for full screen */
-        @@media (max-width: 768px) {
-            body.fullscreen-mode .panel {
-                width: 300px;
-                right: 10px;
-            }
-
-            body.fullscreen-mode .fullscreen-btn {
-                right: 320px;
-            }
-
-            body.fullscreen-mode .panel-toggle {
-                right: 60px;
-            }
-
-            body.fullscreen-mode .zoom-to-area-btn {
-                right: 320px;
-            }
-        }
-
-        @@media (max-width: 480px) {
-            body.fullscreen-mode .panel {
-                width: 280px;
-                right: 5px;
-            }
-
-            body.fullscreen-mode .fullscreen-btn {
-                right: 295px;
-            }
-
-            body.fullscreen-mode .panel-toggle {
-                right: 55px;
-            }
-
-            body.fullscreen-mode .zoom-to-area-btn {
-                right: 295px;
-            }
-        }
     </style>
 </head>
 <body>
@@ -596,25 +374,10 @@
         <div class="content">
             <div id="map-container">
                 <div id="map"></div>
-
-                <!-- NEW BUTTONS -->
-                <button class="fullscreen-btn" id="fullscreen-btn" title="Toggle Full Screen">
-                    ⛶
-                </button>
-                <button class="panel-toggle" id="panel-toggle" title="Show Controls">
-                    ⚙️
-                </button>
-                <button class="zoom-to-area-btn" id="zoom-to-area-btn" title="Zoom to Traffic Area">
-                    🔍
-                </button>
             </div>
 
             <div class="panel">
-                <div class="panel-header" id="panel-header">
-                    <h2>Controls & Information</h2>
-                    <button class="close-btn" id="close-panel">×</button>
-                </div>
-
+                <h2>Controls & Information</h2>
                 <div class="control-group">
                     <div id="trafficConnectionPanel" class="alert alert-info mb-4">
                         <div class="d-flex justify-content-between align-items-center">
@@ -649,19 +412,7 @@
                         </div>
                     </div>
                 </div>
-                <div class="control-group">
-                    <h3>Display Mode</h3>
-                    <div class="radio-group">
-                        <div class="radio-item">
-                            <input type="radio" id="mode-realtime" name="display-mode" value="vde" checked>
-                            <label for="mode-realtime">Vehicle Density</label>
-                        </div>
-                        <div class="radio-item">
-                            <input type="radio" id="mode-historical" name="display-mode" value="vdi">
-                            <label for="mode-historical">Vehicle Difference</label>
-                        </div>
-                    </div>
-                </div>
+
                 <div class="control-group">
                     <h3>Line Thickness Settings</h3>
 
@@ -702,15 +453,15 @@
                     <h3>Traffic Volume Legend</h3>
                     <div class="legend">
                         <div class="legend-item">
-                            <div class="legend-color legend-color-low"></div>
+                            <div class="legend-color" style="background-color: #2ecc71;"></div>
                             <div class="legend-label">Low Volume (0-500)</div>
                         </div>
                         <div class="legend-item">
-                            <div class="legend-color legend-color-medium"></div>
+                            <div class="legend-color" style="background-color: #f39c12;"></div>
                             <div class="legend-label">Medium Volume (501-1000)</div>
                         </div>
                         <div class="legend-item">
-                            <div class="legend-color legend-color-high"></div>
+                            <div class="legend-color" style="background-color: #e74c3c;"></div>
                             <div class="legend-label">High Volume (1000+)</div>
                         </div>
                     </div>
@@ -718,7 +469,6 @@
 
                 <button id="update-volume">Update Traffic Volume</button>
                 <button id="toggle-animation">Pause Animations</button>
-                <button id="zoom-to-area">Zoom to Traffic Area</button>
 
                 <div class="info-box">
                     <strong>How it works:</strong> This visualization uses your OTD data to display origin-to-destination lines.
@@ -772,10 +522,6 @@
              types: {},
              directions: {}
          };
-
-         // NEW: Full screen mode state
-         let isFullScreen = false;
-
          function updateTrafficConnectionStatus(connected) {
              const statusElement = document.getElementById('trafficConnectionStatus');
              const detailsElement = document.getElementById('connectionDetails');
@@ -790,7 +536,6 @@
                  detailsElement.textContent = 'Connection lost';
              }
          }
-
         function showTrafficToast(message, type) {
             console.log('Traffic Toast:', message);
              // Simple notification - you can replace with a proper toast library
@@ -806,7 +551,6 @@
              const connectionPanel = document.getElementById('trafficConnectionPanel');
              connectionPanel.insertAdjacentHTML('afterend', toastHtml);
          }
-
          // Initialize Traffic Monitoring SignalR connection
          async function initializeTrafficMonitoring() {
              try {
@@ -859,45 +603,38 @@
                  showTrafficToast('Failed to connect to traffic monitoring', 'danger');
              }
          }
-
           // Update detection counter
          function updateDetectionCounter(channelId) {
              console.log('Channel:', channelId);
                // Find and update the specific flow
+               // const flow = odData.find(f => f.from === 'A' && f.to === 'B'&& f.channelId === channelId);
                const flow = odData.find(f => f.channelId === channelId);
                if (flow) {
                    var fc=flow.count;
-                   flow.oldcount=fc;
                    fc=fc+1;
                    flow.count = fc;
                   generateTrafficCounts();
                }
          }
-
         // Your OTD Data with updated coordinates
         const odData = [
-            { title:"Infront of DHA Office", from: "A", latFrom: 30.2195812, lngFrom: 67.0056186, to: "B", channelId: 21, latTo:30.255811, lngTo: 66.967975, distance: "5.57 km", count: 0, oldcount:0 },
-            { title:"Pedestrian Bridge", from: "B", latFrom: 30.255811, lngFrom: 66.967975, to: "C", channelId: 25, latTo: 30.264083, lngTo: 66.949583, distance: "2.0 km", count: 0, oldcount:0 },
-            { title:"Tor Nasir Chowk Baleli", from: "C", latFrom: 30.264083, lngFrom: 66.949583, to: "N/P", channelId: 18, latTo: 30.265964, lngTo: 66.944648, distance: "---", count: 0, oldcount:0 },
+            { title:"Infront of DHA Office", from: "A", latFrom: 30.2195812, lngFrom: 67.0056186, to: "B", channelId: 21, latTo:30.255811, lngTo: 66.967975, distance: "5.57 km", count: 0 },
+            { title:"Pedestrian Bridge", from: "B", latFrom: 30.255811, lngFrom: 66.967975, to: "C", channelId: 25, latTo: 30.264083, lngTo: 66.949583, distance: "2.0 km", count: 0 },
+            { title:"Tor Nasir Chowk Baleli", from: "C", latFrom: 30.264083, lngFrom: 66.949583, to: "N/P", channelId: 18, latTo: 30.265964, lngTo: 66.944648, distance: "---", count: 0 },
 
-            { title:"DHA Office To Quetta City", from: "B", latFrom: 30.255811, lngFrom: 66.967975, to: "A", channelId: 20, latTo:30.2196762, lngTo: 67.0062439, distance: "2.0 km", count: 0, oldcount:0 },
-            { title:"Pedestrian Bridge TO DHA Office", from: "C", latFrom: 30.264083, lngFrom: 66.949583, to: "B", channelId: 24, latTo: 30.255811, lngTo: 66.967975, distance: "5.57 km", count: 0, oldcount:0 },
-            { title:"Tor Nasir Chowk To Airport", from: "N/P", latFrom: 30.265964, lngFrom: 66.944648, to: "C", channelId: 19, latTo: 30.264083, lngTo: 66.949583, distance: "---", count: 0, oldcount:0 }
+
+            { title:"DHA Office To Quetta City", from: "B", latFrom: 30.255811, lngFrom: 66.967975, to: "A", channelId: 20, latTo:30.2196762, lngTo: 67.0062439, distance: "2.0 km", count: 0 },
+            { title:"Pedestrian Bridge TO DHA Office", from: "C", latFrom: 30.264083, lngFrom: 66.949583, to: "B", channelId: 24, latTo: 30.255811, lngTo: 66.967975, distance: "5.57 km", count: 0 },
+            { title:"Tor Nasir Chowk To Airport", from: "N/P", latFrom: 30.265964, lngFrom: 66.944648, to: "C", channelId: 19, latTo: 30.264083, lngTo: 66.949583, distance: "---", count: 0 }
         ];
 
         // Initialize the map
         const map = L.map('map').setView([30.3, 67.1], 10);
 
         // Add OpenStreetMap tiles
-        // L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        //     attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-        // }).addTo(map);
-        L.tileLayer('http://{s}.google.com/vt/lyrs=s&x={x}&y={y}&z={z}', {
-            maxZoom: 20,
-            subdomains:['mt0','mt1','mt2','mt3'],
-            attribution: 'Google Satellite' // Attribution for the tile layer
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
         }).addTo(map);
-
 
         // Animation control variables
         let animationRunning = true;
@@ -905,21 +642,6 @@
         let vehicleDensity = 5;
         let arrowDensity = 5;
         let movingVehicles = [];
-
-        // NEW: Function to zoom to the plotted area
-        function zoomToPlottedArea() {
-            // Create a bounds object to contain all points
-            const bounds = L.latLngBounds();
-
-            // Add all route points to the bounds
-            odData.forEach(route => {
-                bounds.extend([route.latFrom, route.lngFrom]);
-                bounds.extend([route.latTo, route.lngTo]);
-            });
-
-            // Fit the map to the bounds with some padding
-            map.fitBounds(bounds, { padding: [20, 20] });
-        }
 
         // Function to get color based on traffic volume
         function getTrafficColor(count) {
@@ -1018,16 +740,10 @@
                 if (vehicle.marker) map.removeLayer(vehicle.marker);
             });
             movingVehicles = [];
-            const vehicleMode = document.querySelector('input[name="display-mode"]:checked').value;
+
             // Create vehicles for each route based on traffic volume and density
             odData.forEach(route => {
-                var numVehicles =0;
-                if(vehicleMode=="vdi"){
-                    numVehicles= route.count - route.oldcount;
-                }
-                else{
-                    numVehicles= Math.max(1, Math.floor(route.count * vehicleDensity / 5));
-                }
+                const numVehicles = Math.max(1, Math.floor(route.count * vehicleDensity / 5));
 
                 for (let i = 0; i < numVehicles; i++) {
                     // Random starting position along the route
@@ -1181,7 +897,7 @@
                 if (!locations.has(route.to)) {
                     locations.set(route.to, {
                         lat: route.latTo,
-                        lng: route.latTo,
+                        lng: route.lngTo,
                         connections: []
                     });
                 }
@@ -1270,13 +986,18 @@
         function updateStats() {
             document.getElementById('total-routes').textContent = odData.length;
 
-             checkAllChannelsStatus();
-            // const uniqueChannels = new Set(odData.map(route => route.channelId)).size;
-            // document.getElementById('active-channels').textContent = uniqueChannels;
+            const uniqueChannels = new Set(odData.map(route => route.channelId)).size;
+            document.getElementById('active-channels').textContent = uniqueChannels;
         }
 
         // Function to generate random traffic counts
         function generateTrafficCounts() {
+            // odData.forEach(route => {
+            //     // Generate a random count between 0 and 8
+            //     route.count = Math.floor(Math.random() * 9);
+            // });
+
+            // Re-render the data
             renderOTDData();
         }
 
@@ -1304,124 +1025,6 @@
             }
         }
 
-        // NEW: Function to toggle full screen mode
-        function toggleFullScreen() {
-            const body = document.body;
-            const fullscreenBtn = document.getElementById('fullscreen-btn');
-            const panelToggle = document.getElementById('panel-toggle');
-            const zoomToAreaBtn = document.getElementById('zoom-to-area-btn');
-
-            isFullScreen = !isFullScreen;
-
-            if (isFullScreen) {
-                body.classList.add('fullscreen-mode');
-                fullscreenBtn.innerHTML = '⛶';
-                fullscreenBtn.title = 'Exit Full Screen';
-
-                // Show panel toggle button
-                panelToggle.style.display = 'flex';
-                zoomToAreaBtn.style.display = 'flex';
-
-                // Make panel draggable in full screen mode
-                makePanelDraggable();
-            } else {
-                body.classList.remove('fullscreen-mode');
-                fullscreenBtn.innerHTML = '⛶';
-                fullscreenBtn.title = 'Enter Full Screen';
-
-                // Hide panel toggle button
-                panelToggle.style.display = 'none';
-                zoomToAreaBtn.style.display = 'none';
-
-                // Reset panel position when exiting full screen
-                const panel = document.querySelector('.panel');
-                panel.style.transform = 'none';
-                panel.classList.remove('hidden');
-            }
-
-            // Trigger map resize after a short delay to ensure proper rendering
-            setTimeout(() => {
-                map.invalidateSize();
-                // Auto-zoom to area after resize
-                setTimeout(zoomToPlottedArea, 300);
-            }, 300);
-        }
-
-        // NEW: Function to toggle panel visibility
-        function togglePanel() {
-            const panel = document.querySelector('.panel');
-            panel.classList.toggle('hidden');
-        }
-
-        // NEW: Make the panel draggable
-        function makePanelDraggable() {
-            const panel = document.querySelector('.panel');
-            const header = document.getElementById('panel-header');
-            let isDragging = false;
-            let currentX;
-            let currentY;
-            let initialX;
-            let initialY;
-            let xOffset = 0;
-            let yOffset = 0;
-
-            header.addEventListener("mousedown", dragStart);
-            document.addEventListener("mouseup", dragEnd);
-            document.addEventListener("mousemove", drag);
-
-            function dragStart(e) {
-                initialX = e.clientX - xOffset;
-                initialY = e.clientY - yOffset;
-
-                if (e.target === header || e.target.closest('.panel-header')) {
-                    isDragging = true;
-                }
-            }
-
-            function dragEnd(e) {
-                initialX = currentX;
-                initialY = currentY;
-
-                isDragging = false;
-            }
-
-            function drag(e) {
-                if (isDragging) {
-                    e.preventDefault();
-                    currentX = e.clientX - initialX;
-                    currentY = e.clientY - initialY;
-
-                    xOffset = currentX;
-                    yOffset = currentY;
-
-                    setTranslate(currentX, currentY, panel);
-                }
-            }
-
-            function setTranslate(xPos, yPos, el) {
-                el.style.transform = `translate(${xPos}px, ${yPos}px)`;
-            }
-        }
-
-
-        // Check status of all channels periodically
-        async function checkAllChannelsStatus() {
-            try {
-                const response = await fetch('/FaceRecognition/GetRunningChannels');
-                const result = await response.json();
-
-                if (result.success) {
-                    document.getElementById('active-channels').textContent=result.channels.length;
-                }
-                else{
-                    console.error('Failed to fetch channels status');
-                    document.getElementById('active-channels').textContent="---"
-                }
-            } catch (error) {
-                console.error('Error checking channels status:', error);
-            }
-        }
-
         // Set up event listeners for controls
         document.getElementById('thickness-scale').addEventListener('input', function() {
             document.getElementById('thickness-value').textContent = this.value + 'x';
@@ -1444,12 +1047,10 @@
             updateDensityDisplay();
             createMovingVehicles();
         });
-
-        document.getElementById('arrow-density').addEventListener('input', function() {
+          document.getElementById('arrow-density').addEventListener('input', function() {
             arrowDensity = parseInt(this.value);
             createDirectionalArrows();
         });
-
         document.getElementById('update-volume').addEventListener('click', generateTrafficCounts);
 
         document.getElementById('toggle-animation').addEventListener('click', function() {
@@ -1479,17 +1080,6 @@
              }
          });
 
-        // NEW: Event listeners for new functionality
-        document.getElementById('fullscreen-btn').addEventListener('click', toggleFullScreen);
-        document.getElementById('panel-toggle').addEventListener('click', togglePanel);
-        document.getElementById('close-panel').addEventListener('click', function() {
-            if (isFullScreen) {
-                togglePanel();
-            }
-        });
-        document.getElementById('zoom-to-area-btn').addEventListener('click', zoomToPlottedArea);
-        document.getElementById('zoom-to-area').addEventListener('click', zoomToPlottedArea);
-
         // Initialize when page loads
          document.addEventListener('DOMContentLoaded', function() {
              initializeTrafficMonitoring();
@@ -1498,9 +1088,6 @@
              updateSpeedDisplay();
              updateDensityDisplay();
              animateVehicles();
-
-             // Auto-zoom to plotted area on initial load
-             setTimeout(zoomToPlottedArea, 1000);
          });
     </script>
 </body>

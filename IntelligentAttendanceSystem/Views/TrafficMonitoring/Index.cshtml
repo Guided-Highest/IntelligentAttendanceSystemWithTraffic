@@ -9,7 +9,7 @@
     }
     /* Circle count marker */
     .custom-marker div {
-        background:purple;
+        background: purple;
         color: white;
         border-radius: 50%;
         width: 55px;
@@ -711,6 +711,24 @@
              renderMap();
          }
 
+        // Check status of all channels periodically
+        async function checkAllChannelsStatus() {
+            try {
+                const response = await fetch('/FaceRecognition/GetRunningChannels');
+                const result = await response.json();
+
+                if (result.success) {
+                    // Update UI based on running channels
+                    CHANNELS.forEach(channel => {
+                        const isRunning = result.channels.includes(channel);
+                        updateChannelState(channel, isRunning);
+                    });
+                    updateActiveChannelsCount();
+                }
+            } catch (error) {
+                console.error('Error checking channels status:', error);
+            }
+        }
 
               // Initialize with empty data
          locations = {
