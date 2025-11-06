@@ -8,5 +8,9 @@ namespace IntelligentAttendanceSystem.Controllers
         {
             return View();
         }
+        public IActionResult Index_Copy()
+        {
+            return View("Index - Copy");
+        }
     }
 }

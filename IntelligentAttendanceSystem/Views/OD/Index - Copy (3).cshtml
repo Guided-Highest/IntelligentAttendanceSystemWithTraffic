@@ -296,8 +296,8 @@
         .arrow-head {
             width: 12px;
             height: 12px;
-            border-top: 5px solid #ca7800;
-            border-left: 5px solid #ca7800;
+            border-top: 5px solid purple;
+            border-left: 5px solid purple;
             transform: rotate(-150deg);
             display: inline-block;
         }
@@ -592,12 +592,6 @@
                 margin-bottom: 0;
                 color: #ecf0f1;
             }
-
-        /* Road pattern styles */
-        .road-pattern {
-            background-image: linear-gradient(90deg, transparent 50%, white 50%);
-            background-size: 20px 100%;
-        }
     </style>
 </head>
 <body>
@@ -681,8 +675,8 @@
 
                     <div class="slider-container">
                         <label for="thickness-scale">Thickness Scale</label>
-                        <input type="range" id="thickness-scale" min="1" max="10" value="1">
-                        <div class="value-display" id="thickness-value">1x</div>
+                        <input type="range" id="thickness-scale" min="1" max="10" value="2">
+                        <div class="value-display" id="thickness-value">2x</div>
                     </div>
 
                     <div class="slider-container">
@@ -778,6 +772,16 @@
 
          // NEW: Full screen mode state
          let isFullScreen = false;
+
+         // Define distinct colors for each route
+         const routeColors = [
+             '#FF6B6B', // Vibrant Red
+             '#4ECDC4', // Teal
+             '#FFD166', // Yellow
+             '#6A0572', // Purple
+             '#118AB2', // Blue
+             '#06D6A0'  // Green
+         ];
 
          function updateTrafficConnectionStatus(connected) {
              const statusElement = document.getElementById('trafficConnectionStatus');
@@ -877,26 +881,15 @@
                }
          }
 
-             locations = {
-             "A": { lat: 30.2195812, lng: 67.0056186, title:"Infront of DHA Office", inbound: 0, outbound: 0 },
-             "B": { lat: 30.255811, lng: 66.967975, title:"Pedestrian Bridge", inbound: 0, outbound: 0 },
-             "C": { lat: 30.264083, lng: 66.949583, title:"Tor Nasir Chowk Baleli", inbound: 0, outbound: 0 },
-             "F": { lat: 30.255811, lng: 66.967975, title:"DHA Office To Quetta City", inbound: 0, outbound: 0 },
-             "E": { lat: 30.264083, lng: 66.949583, title:"Pedestrian Bridge TO DHA Office", inbound: 0, outbound: 0 },
-             "D": { lat: 30.265964, lng: 66.944648, title:"Tor Nasir Chowk To Airport", inbound: 0, outbound: 0 }
-         };
-
-
-
         // Your OTD Data with updated coordinates
         const odData = [
             { title:"Infront of DHA Office", from: "A", latFrom: 30.2195812, lngFrom: 67.0056186, to: "B", channelId: 21, latTo:30.255811, lngTo: 66.967975, distance: "5.57 km", count: 0, oldcount:0 },
             { title:"Pedestrian Bridge", from: "B", latFrom: 30.255811, lngFrom: 66.967975, to: "C", channelId: 25, latTo: 30.264083, lngTo: 66.949583, distance: "2.0 km", count: 0, oldcount:0 },
             { title:"Tor Nasir Chowk Baleli", from: "C", latFrom: 30.264083, lngFrom: 66.949583, to: "N/P", channelId: 18, latTo: 30.265964, lngTo: 66.944648, distance: "---", count: 0, oldcount:0 },
 
-            { title:"DHA Office To Quetta City", from: "E", latFrom: 30.255811, lngFrom: 66.967975, to: "F", channelId: 20, latTo:30.2196762, lngTo: 67.0062439, distance: "2.0 km", count: 0, oldcount:0 },
-            { title:"Pedestrian Bridge TO DHA Office", from: "D", latFrom: 30.264083, lngFrom: 66.949583, to: "E", channelId: 24, latTo: 30.255811, lngTo: 66.967975, distance: "5.57 km", count: 0, oldcount:0 },
-            { title:"Tor Nasir Chowk To Airport", from: "N/P", latFrom: 30.265964, lngFrom: 66.944648, to: "D", channelId: 19, latTo: 30.264083, lngTo: 66.949583, distance: "---", count: 0, oldcount:0 }
+            { title:"DHA Office To Quetta City", from: "B", latFrom: 30.255811, lngFrom: 66.967975, to: "A", channelId: 20, latTo:30.2196762, lngTo: 67.0062439, distance: "2.0 km", count: 0, oldcount:0 },
+            { title:"Pedestrian Bridge TO DHA Office", from: "C", latFrom: 30.264083, lngFrom: 66.949583, to: "B", channelId: 24, latTo: 30.255811, lngTo: 66.967975, distance: "5.57 km", count: 0, oldcount:0 },
+            { title:"Tor Nasir Chowk To Airport", from: "N/P", latFrom: 30.265964, lngFrom: 66.944648, to: "C", channelId: 19, latTo: 30.264083, lngTo: 66.949583, distance: "---", count: 0, oldcount:0 }
         ];
 
         // Initialize the map
@@ -929,45 +922,9 @@
             map.fitBounds(bounds, { padding: [20, 20] });
         }
 
-        // Function to create road-style pattern
-        function createRoadPattern() {
-            // Create a canvas pattern for the road
-            const canvas = document.createElement('canvas');
-            const ctx = canvas.getContext('2d');
-            canvas.width = 20;
-            canvas.height = 10;
-
-            // Fill with black
-            ctx.fillStyle = '#000000';
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-            // Add white center patches
-            ctx.fillStyle = '#FFFFFF';
-            ctx.fillRect(8, 0, 4, canvas.height);
-
-            return canvas.toDataURL();
-        }
-
-        // Function to create road border pattern
-        function createRoadBorderPattern() {
-            const canvas = document.createElement('canvas');
-            const ctx = canvas.getContext('2d');
-            canvas.width = 20;
-            canvas.height = 14;
-
-            // Fill with orange border color
-            ctx.fillStyle = '#ca7800';
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-            // Create black road in the middle
-            ctx.fillStyle = '#000000';
-            ctx.fillRect(2, 2, canvas.width - 4, canvas.height - 4);
-
-            // Add white center patches
-            ctx.fillStyle = '#FFFFFF';
-            ctx.fillRect(8, 2, 4, canvas.height - 4);
-
-            return canvas.toDataURL();
+        // Function to get distinct color for each route
+        function getRouteColor(routeIndex) {
+            return routeColors[routeIndex % routeColors.length];
         }
 
         // Function to calculate midpoint between two coordinates
@@ -1004,7 +961,7 @@
             window.arrowsLayer = L.layerGroup().addTo(map);
 
             // Add arrows for each route
-            odData.forEach(route => {
+            odData.forEach((route, index) => {
                 // Calculate number of arrows based on density setting
                 const numArrows = Math.max(2, Math.floor(arrowDensity * 2));
 
@@ -1029,7 +986,7 @@
                             className: 'arrow-icon',
                             html: `
                                 <div class="direction-arrow" style="transform: rotate(${angle}deg);">
-                                    <div class="arrow-head"></div>
+                                    <div class="arrow-head" style="border-top-color: ${getRouteColor(index)}; border-left-color: ${getRouteColor(index)};"></div>
                                 </div>
                             `,
                             iconSize: [16, 16],
@@ -1059,7 +1016,7 @@
             const vehicleMode = document.querySelector('input[name="display-mode"]:checked').value;
 
             // Create vehicles for each route based on traffic volume and density
-            odData.forEach(route => {
+            odData.forEach((route, index) => {
                 var numVehicles = 0;
                 if(vehicleMode == "vdi"){
                     numVehicles = route.count - route.oldcount;
@@ -1087,8 +1044,8 @@
                     );
 
                     vehicle.marker = L.circleMarker(initialPos, {
-                        color: '#FF6B6B',
-                        fillColor: '#FF6B6B',
+                        color: getRouteColor(index),
+                        fillColor: getRouteColor(index),
                         fillOpacity: 0.9,
                         radius: 4,
                         weight: 2
@@ -1158,7 +1115,7 @@
                 legendItem.className = 'legend-item';
 
                 legendItem.innerHTML = `
-                    <div class="legend-color" style="background: linear-gradient(90deg, #ca7800 0%, #000000 20%, #ffffff 40%, #000000 60%, #ffffff 80%, #ca7800 100%);"></div>
+                    <div class="legend-color" style="background-color: ${getRouteColor(index)}"></div>
                     <div class="legend-label">${route.from} → ${route.to}</div>
                 `;
 
@@ -1166,7 +1123,7 @@
             });
         }
 
-        // Function to render OTD data on the map with road-style lines
+        // Function to render OTD data on the map
         function renderOTDData() {
             // Clear existing OTD layers
             if (window.otdLayer) {
@@ -1195,48 +1152,24 @@
             // Track unique locations for markers
             const locations = new Map();
 
-            // Add each OTD route to the map with road-style lines
-            odData.forEach(route => {
+            // Add each OTD route to the map
+            odData.forEach((route, index) => {
                 // Calculate line weight based on count and scale
                 const weight = calculateLineWeight(route.count, thicknessScale);
-                const roadWidth = Math.max(8, weight * 3); // Make roads wider for better visibility
 
-                // Create road border (orange outline)
-                const borderLine = L.polyline([
-                    [route.latFrom, route.lngFrom],
-                    [route.latTo, route.lngTo]
-                ], {
-                    color: '#ca7800',
-                    weight: roadWidth + 4, // Border is wider than the road
+                // Create the polyline with distinct color for each route
+                const polylineOptions = {
+                    color: getRouteColor(index),
+                    weight: weight,
                     opacity: opacity,
                     lineCap: 'round',
                     lineJoin: 'round'
-                }).addTo(window.otdLayer);
+                };
 
-                // Create road surface (black fill)
-                const roadLine = L.polyline([
+                const polyline = L.polyline([
                     [route.latFrom, route.lngFrom],
                     [route.latTo, route.lngTo]
-                ], {
-                    color: '#000000',
-                    weight: roadWidth,
-                    opacity: opacity,
-                    lineCap: 'round',
-                    lineJoin: 'round'
-                }).addTo(window.otdLayer);
-
-                // Create road markings (white center line)
-                const centerLine = L.polyline([
-                    [route.latFrom, route.lngFrom],
-                    [route.latTo, route.lngTo]
-                ], {
-                    color: '#FFFFFF',
-                    weight: 2,
-                    opacity: opacity,
-                    dashArray: '10, 10', // Dashed line for center markings
-                    lineCap: 'round',
-                    lineJoin: 'round'
-                }).addTo(window.otdLayer);
+                ], polylineOptions).addTo(window.otdLayer);
 
                 // Add From-To label in the middle of the line
                 const midpoint = getMidpoint(route.latFrom, route.lngFrom, route.latTo, route.lngTo);
@@ -1249,16 +1182,17 @@
                     })
                 }).addTo(window.labelsLayer);
 
-                // Add popup with route info to the road line
-                roadLine.bindPopup(`
+                // Add popup with route info
+                polyline.bindPopup(`
                     <div style="min-width: 220px;">
                         <h3>Route: ${route.from} → ${route.to}</h3>
                         <p><strong>Title:</strong> ${route.title}</p>
                         <p><strong>Channel ID:</strong> ${route.channelId}</p>
                         <p><strong>Distance:</strong> ${route.distance}</p>
                         <p><strong>Traffic Volume:</strong> ${route.count}</p>
-                        <div style="margin-top: 8px; padding: 4px; background: #ca7800; border-radius: 4px; text-align: center; color: white; font-weight: bold;">
-                            Road Style Visualization
+                        <div style="display: flex; align-items: center; gap: 8px; margin-top: 8px;">
+                            <div style="width: 20px; height: 4px; background-color: ${getRouteColor(index)};"></div>
+                            <span>Route Color</span>
                         </div>
                     </div>
                 `);
@@ -1358,7 +1292,7 @@
                     <td>${route.from}</td>
                     <td>${route.to}</td>
                     <td>${route.channelId}</td>
-                    <td style="color: #FF6B6B; font-weight: bold;">${route.count}</td>
+                    <td style="color: ${getRouteColor(index)}; font-weight: bold;">${route.count}</td>
                 `;
 
                 tableBody.appendChild(row);

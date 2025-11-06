@@ -175,6 +175,21 @@
             border-radius: 2px;
         }
 
+        .legend-color-low {
+            height: 2px !important;
+            background-color: #2ecc71;
+        }
+
+        .legend-color-medium {
+            height: 4px !important;
+            background-color: #f39c12;
+        }
+
+        .legend-color-high {
+            height: 6px !important;
+            background-color: #e74c3c;
+        }
+
         .legend-label {
             font-size: 0.9rem;
             color: #ecf0f1;
@@ -296,8 +311,8 @@
         .arrow-head {
             width: 12px;
             height: 12px;
-            border-top: 5px solid #ca7800;
-            border-left: 5px solid #ca7800;
+            border-top: 5px solid purple;
+            border-left: 5px solid purple;
             transform: rotate(-150deg);
             display: inline-block;
         }
@@ -569,35 +584,6 @@
                 right: 295px;
             }
         }
-
-        /* Radio group styles */
-        .radio-group {
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-        }
-
-        .radio-item {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-            .radio-item input[type="radio"] {
-                width: 16px;
-                height: 16px;
-            }
-
-            .radio-item label {
-                margin-bottom: 0;
-                color: #ecf0f1;
-            }
-
-        /* Road pattern styles */
-        .road-pattern {
-            background-image: linear-gradient(90deg, transparent 50%, white 50%);
-            background-size: 20px 100%;
-        }
     </style>
 </head>
 <body>
@@ -681,8 +667,8 @@
 
                     <div class="slider-container">
                         <label for="thickness-scale">Thickness Scale</label>
-                        <input type="range" id="thickness-scale" min="1" max="10" value="1">
-                        <div class="value-display" id="thickness-value">1x</div>
+                        <input type="range" id="thickness-scale" min="1" max="10" value="2">
+                        <div class="value-display" id="thickness-value">2x</div>
                     </div>
 
                     <div class="slider-container">
@@ -698,7 +684,7 @@
                     <div class="slider-container">
                         <label for="animation-speed">Animation Speed</label>
                         <input type="range" id="animation-speed" min="1" max="10" value="1">
-                        <div class="value-display" id="speed-value">Slow</div>
+                        <div class="value-display" id="speed-value">Medium</div>
                     </div>
 
                     <div class="slider-container">
@@ -713,9 +699,20 @@
                 </div>
 
                 <div class="control-group">
-                    <h3>Route Colors Legend</h3>
-                    <div class="legend" id="route-legend">
-                        <!-- Route legend will be populated by JavaScript -->
+                    <h3>Traffic Volume Legend</h3>
+                    <div class="legend">
+                        <div class="legend-item">
+                            <div class="legend-color legend-color-low"></div>
+                            <div class="legend-label">Low Volume (0-500)</div>
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-color legend-color-medium"></div>
+                            <div class="legend-label">Medium Volume (501-1000)</div>
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-color legend-color-high"></div>
+                            <div class="legend-label">High Volume (1000+)</div>
+                        </div>
                     </div>
                 </div>
 
@@ -725,7 +722,7 @@
 
                 <div class="info-box">
                     <strong>How it works:</strong> This visualization uses your OTD data to display origin-to-destination lines.
-                    Line thickness represents traffic volume, and each route has a distinct color. Animated vehicles show traffic flow direction and intensity.
+                    Line thickness represents traffic volume, and color indicates congestion level. Animated vehicles show traffic flow direction and intensity.
                 </div>
 
                 <div class="stats">
@@ -877,35 +874,33 @@
                }
          }
 
-             locations = {
-             "A": { lat: 30.2195812, lng: 67.0056186, title:"Infront of DHA Office", inbound: 0, outbound: 0 },
-             "B": { lat: 30.255811, lng: 66.967975, title:"Pedestrian Bridge", inbound: 0, outbound: 0 },
-             "C": { lat: 30.264083, lng: 66.949583, title:"Tor Nasir Chowk Baleli", inbound: 0, outbound: 0 },
-             "F": { lat: 30.255811, lng: 66.967975, title:"DHA Office To Quetta City", inbound: 0, outbound: 0 },
-             "E": { lat: 30.264083, lng: 66.949583, title:"Pedestrian Bridge TO DHA Office", inbound: 0, outbound: 0 },
-             "D": { lat: 30.265964, lng: 66.944648, title:"Tor Nasir Chowk To Airport", inbound: 0, outbound: 0 }
-         };
-
-
-
         // Your OTD Data with updated coordinates
         const odData = [
             { title:"Infront of DHA Office", from: "A", latFrom: 30.2195812, lngFrom: 67.0056186, to: "B", channelId: 21, latTo:30.255811, lngTo: 66.967975, distance: "5.57 km", count: 0, oldcount:0 },
             { title:"Pedestrian Bridge", from: "B", latFrom: 30.255811, lngFrom: 66.967975, to: "C", channelId: 25, latTo: 30.264083, lngTo: 66.949583, distance: "2.0 km", count: 0, oldcount:0 },
             { title:"Tor Nasir Chowk Baleli", from: "C", latFrom: 30.264083, lngFrom: 66.949583, to: "N/P", channelId: 18, latTo: 30.265964, lngTo: 66.944648, distance: "---", count: 0, oldcount:0 },
 
-            { title:"DHA Office To Quetta City", from: "E", latFrom: 30.255811, lngFrom: 66.967975, to: "F", channelId: 20, latTo:30.2196762, lngTo: 67.0062439, distance: "2.0 km", count: 0, oldcount:0 },
-            { title:"Pedestrian Bridge TO DHA Office", from: "D", latFrom: 30.264083, lngFrom: 66.949583, to: "E", channelId: 24, latTo: 30.255811, lngTo: 66.967975, distance: "5.57 km", count: 0, oldcount:0 },
-            { title:"Tor Nasir Chowk To Airport", from: "N/P", latFrom: 30.265964, lngFrom: 66.944648, to: "D", channelId: 19, latTo: 30.264083, lngTo: 66.949583, distance: "---", count: 0, oldcount:0 }
+            { title:"DHA Office To Quetta City", from: "B", latFrom: 30.255811, lngFrom: 66.967975, to: "A", channelId: 20, latTo:30.2196762, lngTo: 67.0062439, distance: "2.0 km", count: 0, oldcount:0 },
+            { title:"Pedestrian Bridge TO DHA Office", from: "C", latFrom: 30.264083, lngFrom: 66.949583, to: "B", channelId: 24, latTo: 30.255811, lngTo: 66.967975, distance: "5.57 km", count: 0, oldcount:0 },
+            { title:"Tor Nasir Chowk To Airport", from: "N/P", latFrom: 30.265964, lngFrom: 66.944648, to: "C", channelId: 19, latTo: 30.264083, lngTo: 66.949583, distance: "---", count: 0, oldcount:0 }
         ];
 
         // Initialize the map
         const map = L.map('map').setView([30.3, 67.1], 10);
 
         // Add OpenStreetMap tiles
-        L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        // L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        //     attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        // }).addTo(map);
+        // L.tileLayer('http://{s}.google.com/vt/lyrs=s&x={x}&y={y}&z={z}', {
+        //     maxZoom: 20,
+        //     subdomains:['mt0','mt1','mt2','mt3'],
+        //     attribution: 'Google Satellite' // Attribution for the tile layer
+        // }).addTo(map);
+                L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
             attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
         }).addTo(map);
+
 
         // Animation control variables
         let animationRunning = true;
@@ -929,45 +924,15 @@
             map.fitBounds(bounds, { padding: [20, 20] });
         }
 
-        // Function to create road-style pattern
-        function createRoadPattern() {
-            // Create a canvas pattern for the road
-            const canvas = document.createElement('canvas');
-            const ctx = canvas.getContext('2d');
-            canvas.width = 20;
-            canvas.height = 10;
-
-            // Fill with black
-            ctx.fillStyle = '#000000';
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-            // Add white center patches
-            ctx.fillStyle = '#FFFFFF';
-            ctx.fillRect(8, 0, 4, canvas.height);
-
-            return canvas.toDataURL();
-        }
-
-        // Function to create road border pattern
-        function createRoadBorderPattern() {
-            const canvas = document.createElement('canvas');
-            const ctx = canvas.getContext('2d');
-            canvas.width = 20;
-            canvas.height = 14;
-
-            // Fill with orange border color
-            ctx.fillStyle = '#ca7800';
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-            // Create black road in the middle
-            ctx.fillStyle = '#000000';
-            ctx.fillRect(2, 2, canvas.width - 4, canvas.height - 4);
-
-            // Add white center patches
-            ctx.fillStyle = '#FFFFFF';
-            ctx.fillRect(8, 2, 4, canvas.height - 4);
-
-            return canvas.toDataURL();
+        // Function to get color based on traffic volume
+        function getTrafficColor(count) {
+            if (count < 501) {
+                return '#2ecc71'; // Green for low volume
+            } else if (count < 1001) {
+                return '#f39c12'; // Orange for medium volume
+            } else {
+                return '#e74c3c'; // Red for high volume
+            }
         }
 
         // Function to calculate midpoint between two coordinates
@@ -1057,14 +1022,14 @@
             });
             movingVehicles = [];
             const vehicleMode = document.querySelector('input[name="display-mode"]:checked').value;
-
             // Create vehicles for each route based on traffic volume and density
             odData.forEach(route => {
-                var numVehicles = 0;
-                if(vehicleMode == "vdi"){
-                    numVehicles = route.count - route.oldcount;
-                } else {
-                    numVehicles = Math.max(1, Math.floor(route.count * vehicleDensity / 5));
+                var numVehicles =0;
+                if(vehicleMode=="vdi"){
+                    numVehicles= route.count - route.oldcount;
+                }
+                else{
+                    numVehicles= Math.max(1, Math.floor(route.count * vehicleDensity / 5));
                 }
 
                 for (let i = 0; i < numVehicles; i++) {
@@ -1087,8 +1052,8 @@
                     );
 
                     vehicle.marker = L.circleMarker(initialPos, {
-                        color: '#FF6B6B',
-                        fillColor: '#FF6B6B',
+                        color: '#f1c40f',
+                        fillColor: '#f1c40f',
                         fillOpacity: 0.9,
                         radius: 4,
                         weight: 2
@@ -1130,8 +1095,79 @@
             // Continue animation
             requestAnimationFrame(animateVehicles);
         }
+        // // Calculate line weight based on count relative to maximum count
+        // function calculateLineWeight(count, thicknessScale) {
+        //     // Find the maximum count in the dataset
+        //     const maxCount = Math.max(...odData.map(route => route.count));
 
-        // Function to calculate line weight based on count
+        //     // If all counts are 0, use minimum weight
+        //     if (maxCount === 0) return 2;
+
+        //     // Calculate weight proportionally:
+        //     // - Minimum count gets weight 2
+        //     // - Maximum count gets weight 20
+        //     // - Everything else scales linearly in between
+        //     const minWeight = 2;
+        //     const maxWeight = 20;
+
+        //     const proportionalWeight = minWeight + ((count / maxCount) * (maxWeight - minWeight));
+        //     const scaledWeight = proportionalWeight * thicknessScale;
+
+        //     // Ensure the weight stays within bounds
+        //     return Math.max(minWeight, Math.min(maxWeight, scaledWeight));
+        // }
+        // function calculateLineWeight(count, thicknessScale) {
+        //     const maxCount = Math.max(...odData.map(route => route.count));
+
+        //     if (maxCount === 0) return 2;
+
+        //     const minWeight = 2;
+        //     const maxWeight = 20;
+
+        //     // Use logarithmic scaling for better visual distribution
+        //     const logCount = Math.log10(count + 1); // +1 to avoid log(0)
+        //     const logMax = Math.log10(maxCount + 1);
+
+        //     const proportionalWeight = minWeight + ((logCount / logMax) * (maxWeight - minWeight));
+        //     const scaledWeight = proportionalWeight * thicknessScale;
+
+        //     return Math.max(minWeight, Math.min(maxWeight, scaledWeight));
+        // }
+        //Option Two
+        // function calculateLineWeight(count, thicknessScale) {
+        //     const counts = odData.map(route => route.count);
+        //     const maxCount = Math.max(...counts);
+        //     const minCount = Math.min(...counts);
+
+        //     if (maxCount === minCount) return 10; // Middle value if all same
+
+        //     const minWeight = 2;
+        //     const maxWeight = 20;
+
+        //     // Map count to weight proportionally within actual data range
+        //     const normalized = (count - minCount) / (maxCount - minCount);
+        //     const proportionalWeight = minWeight + (normalized * (maxWeight - minWeight));
+        //     const scaledWeight = proportionalWeight * thicknessScale;
+
+        //     return Math.max(minWeight, Math.min(maxWeight, scaledWeight));
+        // }
+        //Option Three
+        // function calculateLineWeight(count, thicknessScale) {
+        //     const counts = odData.map(route => route.count);
+        //     const maxCount = Math.max(...counts);
+
+        //     // Handle edge cases
+        //     if (maxCount === 0) return 5 * thicknessScale;
+        //     if (count === 0) return 2 * thicknessScale;
+        //     // Calculate as percentage of maximum
+        //     const percentageOfMax = count / maxCount;
+        //     // Reasonable visual range
+        //     const minVisibleWeight = 2;
+        //     const maxReasonableWeight = 25;
+        //     const weight = minVisibleWeight + (percentageOfMax * (maxReasonableWeight - minVisibleWeight));
+        //     return weight * thicknessScale;
+        // }
+        // Option Four
         function calculateLineWeight(count, thicknessScale) {
             const counts = odData.map(route => route.count);
             const maxCount = Math.max(...counts);
@@ -1148,25 +1184,7 @@
             return weight * thicknessScale;
         }
 
-        // Function to update route legend
-        function updateRouteLegend() {
-            const legendContainer = document.getElementById('route-legend');
-            legendContainer.innerHTML = '';
-
-            odData.forEach((route, index) => {
-                const legendItem = document.createElement('div');
-                legendItem.className = 'legend-item';
-
-                legendItem.innerHTML = `
-                    <div class="legend-color" style="background: linear-gradient(90deg, #ca7800 0%, #000000 20%, #ffffff 40%, #000000 60%, #ffffff 80%, #ca7800 100%);"></div>
-                    <div class="legend-label">${route.from} → ${route.to}</div>
-                `;
-
-                legendContainer.appendChild(legendItem);
-            });
-        }
-
-        // Function to render OTD data on the map with road-style lines
+        // Function to render OTD data on the map
         function renderOTDData() {
             // Clear existing OTD layers
             if (window.otdLayer) {
@@ -1195,48 +1213,31 @@
             // Track unique locations for markers
             const locations = new Map();
 
-            // Add each OTD route to the map with road-style lines
+            // Add each OTD route to the map
             odData.forEach(route => {
                 // Calculate line weight based on count and scale
+                // We add 1 to avoid zero-width lines when count is 0
+                // const weight = Math.max(2, Math.min(20, (route.count + 1) * thicknessScale));
                 const weight = calculateLineWeight(route.count, thicknessScale);
-                const roadWidth = Math.max(8, weight * 3); // Make roads wider for better visibility
 
-                // Create road border (orange outline)
-                const borderLine = L.polyline([
-                    [route.latFrom, route.lngFrom],
-                    [route.latTo, route.lngTo]
-                ], {
-                    color: '#ca7800',
-                    weight: roadWidth + 4, // Border is wider than the road
+                // Create the polyline with pulsing animation for high traffic
+                const polylineOptions = {
+                    color: getTrafficColor(route.count),
+                    weight: weight,
                     opacity: opacity,
                     lineCap: 'round',
                     lineJoin: 'round'
-                }).addTo(window.otdLayer);
+                };
 
-                // Create road surface (black fill)
-                const roadLine = L.polyline([
+                // Add pulsing animation for medium and high traffic
+                if (route.count >= 3) {
+                    polylineOptions.className = 'traffic-pulse';
+                }
+
+                const polyline = L.polyline([
                     [route.latFrom, route.lngFrom],
                     [route.latTo, route.lngTo]
-                ], {
-                    color: '#000000',
-                    weight: roadWidth,
-                    opacity: opacity,
-                    lineCap: 'round',
-                    lineJoin: 'round'
-                }).addTo(window.otdLayer);
-
-                // Create road markings (white center line)
-                const centerLine = L.polyline([
-                    [route.latFrom, route.lngFrom],
-                    [route.latTo, route.lngTo]
-                ], {
-                    color: '#FFFFFF',
-                    weight: 2,
-                    opacity: opacity,
-                    dashArray: '10, 10', // Dashed line for center markings
-                    lineCap: 'round',
-                    lineJoin: 'round'
-                }).addTo(window.otdLayer);
+                ], polylineOptions).addTo(window.otdLayer);
 
                 // Add From-To label in the middle of the line
                 const midpoint = getMidpoint(route.latFrom, route.lngFrom, route.latTo, route.lngTo);
@@ -1249,17 +1250,14 @@
                     })
                 }).addTo(window.labelsLayer);
 
-                // Add popup with route info to the road line
-                roadLine.bindPopup(`
+                // Add popup with route info
+                polyline.bindPopup(`
                     <div style="min-width: 220px;">
                         <h3>Route: ${route.from} → ${route.to}</h3>
-                        <p><strong>Title:</strong> ${route.title}</p>
                         <p><strong>Channel ID:</strong> ${route.channelId}</p>
                         <p><strong>Distance:</strong> ${route.distance}</p>
                         <p><strong>Traffic Volume:</strong> ${route.count}</p>
-                        <div style="margin-top: 8px; padding: 4px; background: #ca7800; border-radius: 4px; text-align: center; color: white; font-weight: bold;">
-                            Road Style Visualization
-                        </div>
+                        <p><strong>Status:</strong> <span style="color:${getTrafficColor(route.count)}">${route.count < 3 ? 'Low' : route.count < 6 ? 'Medium' : 'High'} Volume</span></p>
                     </div>
                 `);
 
@@ -1334,13 +1332,8 @@
 
             // Update stats
             updateStats();
-
-            // Update route legend
-            updateRouteLegend();
-
             // Create directional arrows
             createDirectionalArrows();
-
             // Create moving vehicles
             createMovingVehicles();
         }
@@ -1350,7 +1343,7 @@
             const tableBody = document.getElementById('route-table');
             tableBody.innerHTML = '';
 
-            odData.forEach((route, index) => {
+            odData.forEach(route => {
                 const row = document.createElement('tr');
 
                 row.innerHTML = `
@@ -1358,7 +1351,7 @@
                     <td>${route.from}</td>
                     <td>${route.to}</td>
                     <td>${route.channelId}</td>
-                    <td style="color: #FF6B6B; font-weight: bold;">${route.count}</td>
+                    <td style="color: ${getTrafficColor(route.count)}; font-weight: bold;">${route.count}</td>
                 `;
 
                 tableBody.appendChild(row);
@@ -1368,10 +1361,13 @@
         // Function to update statistics
         function updateStats() {
             document.getElementById('total-routes').textContent = odData.length;
-            checkAllChannelsStatus();
+
+             checkAllChannelsStatus();
+            // const uniqueChannels = new Set(odData.map(route => route.channelId)).size;
+            // document.getElementById('active-channels').textContent = uniqueChannels;
         }
 
-        // Function to generate traffic counts
+        // Function to generate random traffic counts
         function generateTrafficCounts() {
             renderOTDData();
         }
@@ -1499,6 +1495,7 @@
             }
         }
 
+
         // Check status of all channels periodically
         async function checkAllChannelsStatus() {
             try {
@@ -1506,10 +1503,11 @@
                 const result = await response.json();
 
                 if (result.success) {
-                    document.getElementById('active-channels').textContent = result.channels.length;
-                } else {
+                    document.getElementById('active-channels').textContent=result.channels.length;
+                }
+                else{
                     console.error('Failed to fetch channels status');
-                    document.getElementById('active-channels').textContent = "---";
+                    document.getElementById('active-channels').textContent="---"
                 }
             } catch (error) {
                 console.error('Error checking channels status:', error);
@@ -1554,31 +1552,24 @@
             }
         });
 
-        // Event listeners for display mode changes
-        document.querySelectorAll('input[name="display-mode"]').forEach(radio => {
-            radio.addEventListener('change', function() {
-                createMovingVehicles();
-            });
-        });
+         // Event listeners
+         document.getElementById('refreshStats').addEventListener('click', () => {
+             if (trafficConnection && trafficConnection.state === signalR.HubConnectionState.Connected) {
+                 trafficConnection.invoke("TrafficPing").then(pong => {
+                     showTrafficToast(`Refreshed: ${pong}`, 'info');
+                 });
+             }
+         });
 
-        // Event listeners
-        document.getElementById('refreshStats').addEventListener('click', () => {
-            if (trafficConnection && trafficConnection.state === signalR.HubConnectionState.Connected) {
-                trafficConnection.invoke("TrafficPing").then(pong => {
-                    showTrafficToast(`Refreshed: ${pong}`, 'info');
-                });
-            }
-        });
+         document.getElementById('trafficReconnectBtn').addEventListener('click', () => {
+             initializeTrafficMonitoring();
+         });
 
-        document.getElementById('trafficReconnectBtn').addEventListener('click', () => {
-            initializeTrafficMonitoring();
-        });
-
-        document.getElementById('trafficDisconnectBtn').addEventListener('click', () => {
-            if (trafficConnection) {
-                trafficConnection.stop();
-            }
-        });
+         document.getElementById('trafficDisconnectBtn').addEventListener('click', () => {
+             if (trafficConnection) {
+                 trafficConnection.stop();
+             }
+         });
 
         // NEW: Event listeners for new functionality
         document.getElementById('fullscreen-btn').addEventListener('click', toggleFullScreen);
@@ -1592,17 +1583,17 @@
         document.getElementById('zoom-to-area').addEventListener('click', zoomToPlottedArea);
 
         // Initialize when page loads
-        document.addEventListener('DOMContentLoaded', function() {
-            initializeTrafficMonitoring();
-            // Initialize the visualization
-            generateTrafficCounts();
-            updateSpeedDisplay();
-            updateDensityDisplay();
-            animateVehicles();
+         document.addEventListener('DOMContentLoaded', function() {
+             initializeTrafficMonitoring();
+             // Initialize the visualization
+             generateTrafficCounts();
+             updateSpeedDisplay();
+             updateDensityDisplay();
+             animateVehicles();
 
-            // Auto-zoom to plotted area on initial load
-            setTimeout(zoomToPlottedArea, 1000);
-        });
+             // Auto-zoom to plotted area on initial load
+             setTimeout(zoomToPlottedArea, 1000);
+         });
     </script>
 </body>
 </html>
