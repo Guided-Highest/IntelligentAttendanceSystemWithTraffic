@@ -1150,7 +1150,13 @@
             // Weight is proportional to count relative to reference
             const weight = Math.max(1, (count / reference) * 8);
 
-            return weight * thicknessScale;
+            // SIMPLE ZOOM SCALING - Add just these 2 lines
+        const zoom = map.getZoom();
+        const zoomScale = Math.min(1, zoom / 14); // Scale down when zoom < 14
+
+
+
+              return weight * thicknessScale * zoomScale;
         }
 
         // Function to update route legend
@@ -1204,7 +1210,7 @@
             odData.forEach(route => {
                 // Calculate line weight based on count and scale
                 const weight = calculateLineWeight(route.count, thicknessScale);
-                const roadWidth = Math.max(8, weight * 3); // Make roads wider for better visibility
+                const roadWidth = Math.max(6, weight * 3 * Math.min(1, map.getZoom() / 14)); // Make roads wider for better visibility
 
                 // Create road border (orange outline)
                 const borderLine = L.polyline([
